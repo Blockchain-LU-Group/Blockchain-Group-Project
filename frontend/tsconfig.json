@@ -1,0 +1,166 @@
+{
+    /**
+     * TypeScript 编译器配置
+     * 控制 TypeScript 如何编译和检查代码
+     */
+    "compilerOptions": {
+      /**
+       * target: "es5"
+       * 编译目标：将 TypeScript 编译为 ES5 JavaScript
+       * ES5 兼容性最好，支持所有浏览器（包括 IE11）
+       * 可选值：es5, es6, es2015, es2016, es2017, esnext
+       */
+      "target": "es5",
+  
+      /**
+       * lib: 包含的类型库
+       * - "dom": 浏览器 DOM API（如 document, window）
+       * - "dom.iterable": DOM 可迭代对象（如 NodeList）
+       * - "esnext": 最新的 ECMAScript 特性
+       */
+      "lib": ["dom", "dom.iterable", "esnext"],
+  
+      /**
+       * allowJs: true
+       * 允许编译 JavaScript 文件（.js, .jsx）
+       * 不仅仅是 .ts/.tsx 文件
+       */
+      "allowJs": true,
+  
+      /**
+       * skipLibCheck: true
+       * 跳过库文件（.d.ts）的类型检查
+       * 加快编译速度，减少第三方库类型错误
+       */
+      "skipLibCheck": true,
+  
+      /**
+       * strict: true
+       * 启用所有严格类型检查选项
+       * 包括：strictNullChecks, strictFunctionTypes 等
+       * 推荐开启，提高代码质量
+       */
+      "strict": true,
+  
+      /**
+       * forceConsistentCasingInFileNames: true
+       * 强制文件名大小写一致
+       * 防止在不同操作系统上出现问题
+       * 例如：import './File.tsx' 和 import './file.tsx' 会报错
+       */
+      "forceConsistentCasingInFileNames": true,
+  
+      /**
+       * noEmit: true
+       * 不生成编译后的文件
+       * 因为 Next.js 会处理编译，这里只做类型检查
+       */
+      "noEmit": true,
+  
+      /**
+       * esModuleInterop: true
+       * 启用 ES 模块互操作性
+       * 允许使用 import React from 'react'
+       * 而不是 import * as React from 'react'
+       */
+      "esModuleInterop": true,
+  
+      /**
+       * module: "esnext"
+       * 模块系统：使用最新的 ES 模块
+       * 支持 import/export 语法
+       */
+      "module": "esnext",
+  
+      /**
+       * moduleResolution: "bundler"
+       * 模块解析策略：bundler 模式
+       * 专为现代打包工具（如 Webpack）优化
+       * Next.js 14 推荐使用此选项
+       */
+      "moduleResolution": "bundler",
+  
+      /**
+       * resolveJsonModule: true
+       * 允许导入 JSON 文件
+       * 例如：import data from './data.json'
+       */
+      "resolveJsonModule": true,
+  
+      /**
+       * isolatedModules: true
+       * 每个文件作为独立模块编译
+       * 确保代码可以被单文件编译工具处理（如 Babel, swc）
+       * Next.js 要求此选项
+       */
+      "isolatedModules": true,
+  
+      /**
+       * jsx: "preserve"
+       * JSX 处理方式：保留 JSX 语法
+       * 不转换 JSX，让 Next.js 的编译器处理
+       * 输出：<div> 保持为 <div>（不转为 React.createElement）
+       */
+      "jsx": "preserve",
+  
+      /**
+       * incremental: true
+       * 增量编译：只编译修改过的文件
+       * 加快后续编译速度
+       */
+      "incremental": true,
+  
+      /**
+       * plugins: Next.js 插件
+       * 启用 Next.js 的 TypeScript 插件
+       * 提供 Next.js 特定的类型检查和智能提示
+       */
+      "plugins": [
+        {
+          "name": "next"
+        }
+      ],
+  
+      /**
+       * paths: 路径别名配置
+       * "@/*": ["./src/*"]
+       * 意思：@/ 映射到 src/ 目录
+       * 使用：import Component from '@/components/MyComponent'
+       * 而不是：import Component from '../../../components/MyComponent'
+       */
+      "paths": {
+        "@/*": ["./src/*"]
+      }
+    },
+  
+   /**
+      📘 tsconfig.json (🔵 隐式：Next.js 自动查找)
+          ↓
+      🔧 TypeScript 编译器初始化 (🔵 隐式：Next.js 内部代码)
+          ↓
+      📁 扫描 src/app/ 目录 (🟡 约定路由：文件系统扫描)
+          ├─ 发现 layout.tsx
+          ├─ 发现 page.tsx
+          └─ 发现 providers.tsx
+    */
+
+    /**
+     * include: 包含哪些文件进行编译
+     * - "next-env.d.ts": Next.js 类型定义
+     * - "**\/*.ts": 所有 .ts 文件
+     * - "**\/*.tsx": 所有 .tsx 文件
+     * - ".next/types/**\/*.ts": Next.js 生成的类型文件
+     */
+    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  
+    /**
+     * exclude: 排除哪些文件
+     * - "node_modules": 不编译第三方库
+     */
+    "exclude": ["node_modules"]
+  }
+  
+  
+  
+  
+  
