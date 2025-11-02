@@ -2,3 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 23, 42;
+  --background-end-rgb: 30, 41, 59;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      rgb(var(--background-start-rgb)),
+      rgb(var(--background-end-rgb))
+    );
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* 暗黑主题自定义样式 */
+.dark-card {
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.dark-input {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: white;
+}
+
+.dark-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  outline: none;
+  ring: 2px;
+  ring-color: rgba(99, 102, 241, 0.3);
+}

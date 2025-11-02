@@ -1,0 +1,38 @@
+{
+  "_comments": [
+    "Slither workflow overview:",
+    "1) Parse Solidity source code and build intermediate representation (IR/CFG)",
+    "2) Run built-in/plugin detectors to scan for known risk patterns",
+    "3) Generate reports based on severity levels and filters (printers)",
+    "This configuration file is used to control scan scope, filter paths/rules, output types, etc.",
+    "Note: JSON does not support native comments, here we use _comments and *_comment fields for documentation, Slither will ignore unknown keys"
+  ],
+  "filter_paths__comment": "Files/directories to ignore (skip if path contains), used to avoid scanning compilation artifacts, dependencies, and scripts.",
+  "filter_paths": "node_modules,test,scripts,artifacts,cache,typechain-types",
+  "exclude_dependencies__comment": "When true, do not scan contracts within dependencies (e.g., node_modules).",
+  "exclude_dependencies": true,
+  "exclude_optimization__comment": "When true, can ignore findings related only to compilation optimization (generally keep false).",
+  "exclude_optimization": false,
+  "exclude_informational__comment": "Whether to ignore informational level (info only) findings.",
+  "exclude_informational": false,
+  "exclude_low__comment": "Whether to ignore low severity findings.",
+  "exclude_low": false,
+  "exclude_medium__comment": "Whether to ignore medium severity findings.",
+  "exclude_medium": false,
+  "exclude_high__comment": "Whether to ignore high severity findings (not recommended).",
+  "exclude_high": false,
+  "detectors_to_exclude__comment": "List of explicitly disabled detectors: filter noise or irrelevant rules based on project context.",
+  "detectors_to_exclude": [
+    "similar-names",
+    "too-many-digits",
+    "variable-scope",
+    "dead-code",
+    "unused-return",
+    "low-level-calls"
+  ],
+  "printers__comment": "List of output printers: human-summary for human-readable summary; txt for plain text report. Can add json, etc. as needed.",
+  "printers": [
+    "human-summary",
+    "txt"
+  ]
+}

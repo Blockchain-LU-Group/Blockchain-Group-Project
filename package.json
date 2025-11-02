@@ -1,0 +1,79 @@
+{
+  "name": "euop-defi",
+  "version": "1.0.0",
+  "description": "Euop DeFi - 区块链欧式看涨期权项目",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:coverage": "hardhat coverage",
+    "deploy:sepolia": "hardhat run scripts/deploy_option.js --network sepolia",
+    "verify:sepolia": "hardhat run scripts/verify_contract.js --network sepolia",
+    "slither": "slither . --config-file slither.config.json",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "format": "prettier --write .",
+    "clean": "hardhat clean"
+  },
+  "keywords": [
+    "blockchain",
+    "defi",
+    "lending",
+    "ethereum",
+    "smart-contracts",
+    "web3",
+    "minilender",
+    "collateral",
+    "liquidation"
+  ],
+  "author": "Blockchain-Group-Project",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@nomicfoundation/hardhat-verify": "^1.0.0",
+    "@types/chai": "^4.2.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^16.11.56",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "chai": "^4.2.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^8.0.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "ethers": "^6.0.0",
+    "hardhat": "^2.17.0",
+    "hardhat-gas-reporter": "^1.0.8",
+    "prettier": "^2.7.0",
+    "solidity-coverage": "^0.8.0",
+    "ts-node": "^8.4.1",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.8.0",
+    "@openzeppelin/contracts": "^4.9.0",
+    "@wagmi/core": "^1.4.0",
+    "clsx": "^2.1.1",
+    "dotenv": "^16.0.0",
+    "motion": "^12.23.24",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^3.3.1",
+    "viem": "^1.19.0",
+    "wagmi": "^1.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Blockchain-LU-Group/Blockchain-Group-Project.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Blockchain-LU-Group/Blockchain-Group-Project/issues"
+  },
+  "homepage": "https://github.com/Blockchain-LU-Group/Blockchain-Group-Project#readme"
+}

@@ -21,6 +21,9 @@
 // 导入依赖
 // ============================================================================
 
+import * as React from 'react';
+import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+
 // Wagmi: React Hooks for Ethereum - Web3 连接的核心库
 // - WagmiProvider: 提供 Web3 上下文
 // - createConfig: 创建 Wagmi 配置
@@ -37,9 +40,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // - hardhat: 本地开发网络（用于本地测试）
 import { sepolia, hardhat } from 'wagmi/chains'
 
-// Wagmi Connectors: 钱包连接器
-// - injected: 注入式钱包连接器（MetaMask、Coinbase Wallet 等）
-import { injected } from 'wagmi/connectors'
+// defineChain 函数的主要作用是定义一个区块链网络的配置信息，包括该网络的链 ID、RPC 节点地址
+import { defineChain } from 'viem';
+
+import '@rainbow-me/rainbowkit/styles.css'; // 用于构建以太坊钱包连接界面的 React 库
 
 // ============================================================================
 // React Query 客户端配置
@@ -64,12 +68,30 @@ const queryClient = new QueryClient()
 // Wagmi 配置
 // ============================================================================
 
+// 定义与 Hardhat 兼容的 localhost 网络
+const localhost = defineChain({
+  id: 31337,
+  name: 'Localhost 8545',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['http://127.0.0.1:8545'],
+    },
+  },
+});
+
 /**
  * Wagmi 配置对象
  * 
  * 定义了 DApp 支持的区块链网络、钱包连接方式和 RPC 端点
  */
-const config = createConfig({
+const config = getDefaultConfig({
+  appName: 'EuropeanCallOption DeFi',
+  projectId: 'YOUR_WALLETCONNECT_PROJECT_ID',
   /**
    * chains: 支持的区块链网络列表
    * 
@@ -83,21 +105,7 @@ const config = createConfig({
    *   - 运行：npx hardhat node
    *   - 优点：快速、可预测、易于调试
    */
-  chains: [sepolia, hardhat],
-
-  /**
-   * connectors: 钱包连接器列表
-   * 
-   * - injected(): 浏览器注入的钱包（自动检测）
-   *   - 支持：MetaMask, Coinbase Wallet, Trust Wallet 等
-   *   - 工作原理：检测 window.ethereum 对象
-   *   - 用户体验：点击"连接钱包"按钮 → 弹出钱包确认
-   * 
-   * 其他可选连接器（未启用）：
-   * - walletConnect(): WalletConnect 协议（扫码连接）
-   * - coinbaseWallet(): Coinbase 官方钱包
-   */
-  connectors: [injected()],
+  chains: [sepolia, localhost],
 
   /**
    * transports: RPC 传输配置
@@ -117,7 +125,7 @@ const config = createConfig({
    */
   transports: {
     [sepolia.id]: http(),
-    [hardhat.id]: http('http://127.0.0.1:8545'),
+    [hardhat.id]: http(),
   },
 })
 
@@ -172,11 +180,17 @@ const config = createConfig({
  * ```
  */
 export function Providers({ children }: { children: React.ReactNode }) {
+  // 追踪组件是否已经完成挂载
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <RainbowKitProvider>
+          {mounted && children}
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
-  )
+  );
 }

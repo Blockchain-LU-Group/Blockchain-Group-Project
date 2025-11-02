@@ -55,13 +55,13 @@ const inter = Inter({ subsets: ['latin'] })
  * 
  * Next.js 会自动将这些信息注入到 HTML <head> 中：
  * <head>
- *   <title>MiniLender DeFi - 去中心化借贷平台</title>
- *   <meta name="description" content="专为学生设计的去中心化借贷平台" />
+ *   <title>EuropeanCallOption DeFi</title>
+ *   <meta name="description" content="欧式看涨期权交易平台 - 为学生设计" />
  * </head>
  */
 export const metadata: Metadata = {
-  title: 'MiniLender DeFi - 去中心化借贷平台',
-  description: '专为学生设计的去中心化借贷平台',
+  title: 'EuropeanCallOption DeFi',
+  description: '欧式看涨期权交易平台 - 为学生设计',
 }
 
 // ============================================================================

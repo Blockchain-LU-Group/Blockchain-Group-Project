@@ -1,0 +1,37 @@
+{
+  "network": "sepolia",
+  "timestamp": "2025-11-02T10:53:17.229Z",
+  "deployer": "0x15Db97935D18C391F9B4106D4511F699Be3C794D",
+  "contracts": {
+    "optionFactory": {
+      "address": "0x8000b7AE7a3C4138Dcc6DcE93E11051d1139c81D"
+    },
+    "underlyingAsset": {
+      "address": "0x452f0232e083998d2f968b0602fb8208e7320df8",
+      "name": "Underlying Asset",
+      "symbol": "UA"
+    },
+    "strikeAsset": {
+      "address": "0x424bd9e49e2049600deda9604d2a3ba836f99ee4",
+      "name": "Strike Asset",
+      "symbol": "SA"
+    },
+    "europeanCallOption": {
+      "address": "0x20d2518424057D8DacBD9536D9D83B067990954e",
+      "constructorArgs": {
+        "underlyingAsset": "0x452f0232e083998d2f968b0602fb8208e7320df8",
+        "strikeAsset": "0x424bd9e49e2049600deda9604d2a3ba836f99ee4",
+        "strikePrice": "100000000000000000000",
+        "expirationTime": 1764672787,
+        "contractSize": "1000000000000000000",
+        "holder": "0x15Db97935D18C391F9B4106D4511F699Be3C794D",
+        "issuer": "0x15Db97935D18C391F9B4106D4511F699Be3C794D",
+        "factory": "0x8000b7AE7a3C4138Dcc6DcE93E11051d1139c81D"
+      }
+    }
+  },
+  "roles": {
+    "issuer": "0x15Db97935D18C391F9B4106D4511F699Be3C794D",
+    "holder": "0x15Db97935D18C391F9B4106D4511F699Be3C794D"
+  }
+}

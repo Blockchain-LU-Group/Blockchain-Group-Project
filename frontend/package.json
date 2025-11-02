@@ -1,33 +1,34 @@
 {
-    "name": "minilender-frontend",
-    "version": "0.1.0",
-    "private": true,
-    "scripts": {
-        "dev": "next dev -p 3002",
-        "_comment_next_": "next.config.js (🔵 隐式：Next.js 自动查找)",
-        "_comment_ts_": "tsconfig.json (🔵 隐式：Next.js 自动查找)",
-        "_comment_TSC_": "TypeScript 编译器初始化 (🔵 隐式：Next.js 内部代码)",
-        "build": "next build",
-        "start": "next start",
-        "lint": "next lint"
-    },
-    "dependencies": {
-        "next": "^14.2.0",
-        "react": "^18.3.0",
-        "react-dom": "^18.3.0",
-        "wagmi": "^2.12.0",
-        "@tanstack/react-query": "^5.51.0",
-        "viem": "^2.19.0"
-    },
-    "devDependencies": {
-        "@types/node": "^20.14.0",
-        "@types/react": "^18.3.0",
-        "@types/react-dom": "^18.3.0",
-        "typescript": "^5.5.0",
-        "tailwindcss": "^3.4.0",
-        "postcss": "^8.4.0",
-        "autoprefixer": "^10.4.0",
-        "eslint": "^8.57.0",
-        "eslint-config-next": "^14.2.0"
-    }
+  "name": "euop-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3002",
+    "build": "next build",
+    "start": "next start -p 3002",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "clsx": "^2.1.1",
+    "motion": "^12.23.24",
+    "next": "14.0.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^3.3.1",
+    "viem": "^2.0.0",
+    "wagmi": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.0.4",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3"
+  }
 }
