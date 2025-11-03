@@ -1,31 +1,40 @@
+// Client-side component marker for Next.js
 'use client';
 
+// Import React hooks for component state and side effects
 import { useState, useEffect } from 'react';
+// Import Wagmi hooks for wallet connection and balance querying
 import { useAccount, useBalance } from 'wagmi';
+// Import Viem utility for converting wei to ether
 import { formatEther } from 'viem';
+// Import RainbowKit connect button component for wallet UI
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
+// Interface defining component props with optional callback functions
 interface WalletConnectProps {
-  onConnect?: (address: string) => void;
-  onDisconnect?: () => void;
+  onConnect?: (address: string) => void; // Optional callback when wallet connects
+  onDisconnect?: () => void; // Optional callback when wallet disconnects
 }
 
+// Main wallet connection component
 export default function WalletConnect({ onConnect, onDisconnect }: WalletConnectProps) {
-  const { address, isConnected } = useAccount();
-  const { data: balance } = useBalance({
-    address: address,
+  const { address, isConnected } = useAccount(); // Get wallet address and connection status from Wagmi
+  const { data: balance } = useBalance({ // Query account balance from blockchain
+    address: address, // Fetch balance for connected address
   });
 
+  // Execute side effects when connection status or address changes
   useEffect(() => {
-    if (isConnected && address && onConnect) {
-      onConnect(address);
-    } else if (!isConnected && onDisconnect) {
-      onDisconnect();
+    if (isConnected && address && onConnect) { // If wallet is connected and callback exists
+      onConnect(address); // Call onConnect callback with address
+    } else if (!isConnected && onDisconnect) { // If wallet is disconnected and callback exists
+      onDisconnect(); // Call onDisconnect callback
     }
-  }, [isConnected, address, onConnect, onDisconnect]);
+  }, [isConnected, address, onConnect, onDisconnect]); // Re-run when dependencies change
 
+  // Helper function to format Ethereum address (show first 6 and last 4 chars)
   const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`; // Format as "0x1234...abcd"
   };
 
   return (

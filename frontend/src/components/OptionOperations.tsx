@@ -1,221 +1,232 @@
+// Client-side component marker for Next.js
 'use client';
 
+// Import React hooks for component state, effects, and context
 import React, { useState, useEffect } from 'react';
+// Import Wagmi hooks for wallet and contract interactions
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+// Import Viem utilities for parsing/formatting ether values and address type
 import { parseEther, formatEther, type Address } from 'viem';
 
-// Contract ABI (simplified option contract ABI)
-// This ABI defines the interface for interacting with the EuropeanCallOption contract
+/**
+ * Contract ABI (simplified option contract ABI)
+ * This ABI defines the interface for interacting with the EuropeanCallOption contract
+ * Contains both read and write functions for option operations
+ */
 const EUROPEAN_CALL_OPTION_ABI = [
   {
-    "inputs": [
-      {"internalType": "address", "name": "_underlyingAsset", "type": "address"},
-      {"internalType": "address", "name": "_strikeAsset", "type": "address"},
-      {"internalType": "uint256", "name": "_strikePrice", "type": "uint256"},
-      {"internalType": "uint256", "name": "_expirationTime", "type": "uint256"},
-      {"internalType": "uint256", "name": "_contractSize", "type": "uint256"},
-      {"internalType": "address", "name": "_holder", "type": "address"}
+    "inputs": [ // Constructor parameters (only used during deployment, not callable)
+      {"internalType": "address", "name": "_underlyingAsset", "type": "address"}, // Underlying asset token address
+      {"internalType": "address", "name": "_strikeAsset", "type": "address"}, // Strike asset token address
+      {"internalType": "uint256", "name": "_strikePrice", "type": "uint256"}, // Strike price in wei
+      {"internalType": "uint256", "name": "_expirationTime", "type": "uint256"}, // Expiration Unix timestamp
+      {"internalType": "uint256", "name": "_contractSize", "type": "uint256"}, // Contract size in wei
+      {"internalType": "address", "name": "_holder", "type": "address"} // Holder (buyer) address
     ],
-    "name": "constructor",
-    "type": "constructor"
+    "name": "constructor", // Constructor function
+    "type": "constructor" // This is a constructor definition
   },
   {
-    "inputs": [{"internalType": "uint256", "name": "premium", "type": "uint256"}],
-    "name": "payPremium",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "inputs": [{"internalType": "uint256", "name": "premium", "type": "uint256"}], // Premium amount in wei
+    "name": "payPremium", // Function to pay premium and activate option
+    "outputs": [], // No return values
+    "stateMutability": "nonpayable", // Modifies state but doesn't accept ETH
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "exercised",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "exercised", // Function to exercise the option
+    "outputs": [], // No return values
+    "stateMutability": "nonpayable", // Modifies state but doesn't accept ETH
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "expireOption",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "expireOption", // Function to manually expire option after exercise window
+    "outputs": [], // No return values
+    "stateMutability": "nonpayable", // Modifies state but doesn't accept ETH
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "isExercisable",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "isExercisable", // Check if option is currently exercisable
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}], // Returns true if within exercise window
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "status",
-    "outputs": [{"internalType": "uint8", "name": "", "type": "uint8"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "status", // Get current option lifecycle status
+    "outputs": [{"internalType": "uint8", "name": "", "type": "uint8"}], // Returns status: 0=Created, 1=Active, 2=Expired, 3=Exercised
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "underlyingAsset",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "underlyingAsset", // Get underlying asset token address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns token address
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "strikeAsset",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "strikeAsset", // Get strike asset token address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns token address
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "strikePrice",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "strikePrice", // Get strike price parameter
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns strike price in wei
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "contractSize",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "contractSize", // Get contract size parameter
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns contract size in wei
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "holder",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "holder", // Get holder (buyer) address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns holder address
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "issuer",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "issuer", // Get issuer (seller) address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns issuer address
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [],
-    "name": "expirationTime",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters
+    "name": "expirationTime", // Get expiration timestamp
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns Unix timestamp in seconds
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   }
 ] as const;
 
-// ERC20 ABI (for approval and balance queries)
-// This ABI defines the interface for interacting with ERC20 tokens
+/**
+ * ERC20 ABI (for approval and balance queries)
+ * This ABI defines the interface for interacting with ERC20 tokens
+ * Standard ERC20 functions needed for token operations
+ */
 const ERC20_ABI = [
   {
     "inputs": [
-      {"internalType": "address", "name": "spender", "type": "address"},
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+      {"internalType": "address", "name": "spender", "type": "address"}, // Address to approve (contract address)
+      {"internalType": "uint256", "name": "amount", "type": "uint256"} // Amount to approve in wei
     ],
-    "name": "approve",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "name": "approve", // Function to approve token transfer
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}], // Returns success boolean
+    "stateMutability": "nonpayable", // Modifies state but doesn't accept ETH
+    "type": "function" // This is a function definition
   },
   {
     "inputs": [
-      {"internalType": "address", "name": "owner", "type": "address"},
-      {"internalType": "address", "name": "spender", "type": "address"}
+      {"internalType": "address", "name": "owner", "type": "address"}, // Token owner address
+      {"internalType": "address", "name": "spender", "type": "address"} // Approved spender address
     ],
-    "name": "allowance",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "name": "allowance", // Query approved amount
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns approved amount in wei
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "balanceOf",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [{"internalType": "address", "name": "account", "type": "address"}], // Account address to query
+    "name": "balanceOf", // Query token balance
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns balance in wei
+    "stateMutability": "view", // Read-only function
+    "type": "function" // This is a function definition
   }
 ] as const;
 
+// Main option operations component - provides UI for paying premium, exercising, and expiring options
 export default function OptionOperations({ contractAddress }: { contractAddress?: Address }) {
-  const { address, isConnected } = useAccount();
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+  const { address, isConnected } = useAccount(); // Get wallet connection state
+  const { writeContract, data: hash, isPending } = useWriteContract(); // Get contract write function and transaction state
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash }); // Wait for transaction confirmation
 
-  const [premium, setPremium] = useState('');
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [premium, setPremium] = useState(''); // Store premium amount input
+  const [error, setError] = useState<string>(''); // Store error message
+  const [success, setSuccess] = useState<string>(''); // Store success message
 
-  // Read option status
+  // Read option status (0=Created, 1=Active, 2=Expired, 3=Exercised)
   const { data: status } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'status',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'status', // Read status
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
-  // Read if option is exercisable
+  // Read if option is exercisable (true if within exercise window)
   const { data: isExercisable } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'isExercisable',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'isExercisable', // Check exercisability
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
-  // Read strikeAsset address (for approval)
+  // Read strikeAsset address (for approval before premium/exercise)
   const { data: strikeAsset } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'strikeAsset',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'strikeAsset', // Read strike asset token address
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
   // Read underlyingAsset address (for checking issuer approval)
   const { data: underlyingAsset } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'underlyingAsset',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'underlyingAsset', // Read underlying asset token address
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
   // Read strike price and contract size (for calculating exercise amount required)
   const { data: strikePrice } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'strikePrice',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'strikePrice', // Read strike price
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
   const { data: contractSize } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'contractSize',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'contractSize', // Read contract size
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
-  // Read holder address
+  // Read holder address (buyer)
   const { data: holder } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'holder',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'holder', // Read holder address
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
-  // Read issuer address
+  // Read issuer address (seller)
   const { data: issuer } = useReadContract({
     address: contractAddress,
     abi: EUROPEAN_CALL_OPTION_ABI,
@@ -227,88 +238,88 @@ export default function OptionOperations({ contractAddress }: { contractAddress?
 
   // Read expiration time
   const { data: expirationTime } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'expirationTime',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'expirationTime', // Read expiration timestamp
     query: {
-      enabled: !!contractAddress,
+      enabled: !!contractAddress, // Only query if contract address exists
     },
   });
 
   // Check if current user is holder
-  const isHolder = address && holder && typeof holder === 'string' && address.toLowerCase() === holder.toLowerCase();
-  const isNotMatched = (typeof holder === 'string' && holder === '0x0000000000000000000000000000000000000000') || !holder;
+  const isHolder = address && holder && typeof holder === 'string' && address.toLowerCase() === holder.toLowerCase(); // Compare addresses (case-insensitive)
+  const isNotMatched = (typeof holder === 'string' && holder === '0x0000000000000000000000000000000000000000') || !holder; // Check if option is not matched yet
   
   // Check if current user is issuer
-  const isIssuer = address && issuer && typeof issuer === 'string' && address.toLowerCase() === issuer.toLowerCase();
+  const isIssuer = address && issuer && typeof issuer === 'string' && address.toLowerCase() === issuer.toLowerCase(); // Compare addresses (case-insensitive)
 
   // Read current user's approval amount for option contract (strikeAsset)
   const { data: allowance } = useReadContract({
-    address: strikeAsset as Address | undefined,
-    abi: ERC20_ABI,
-    functionName: 'allowance',
-    args: address && contractAddress ? [address, contractAddress] : undefined,
+    address: strikeAsset as Address | undefined, // Strike asset token address
+    abi: ERC20_ABI, // ERC20 ABI
+    functionName: 'allowance', // Check approval amount
+    args: address && contractAddress ? [address, contractAddress] : undefined, // [owner, spender]
     query: {
-      enabled: !!strikeAsset && !!address && !!contractAddress,
+      enabled: !!strikeAsset && !!address && !!contractAddress, // Only query if addresses exist
     },
   });
 
   // Read current user's strikeAsset balance
   const { data: strikeBalance } = useReadContract({
-    address: strikeAsset as Address | undefined,
-    abi: ERC20_ABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
+    address: strikeAsset as Address | undefined, // Strike asset token address
+    abi: ERC20_ABI, // ERC20 ABI
+    functionName: 'balanceOf', // Query balance
+    args: address ? [address] : undefined, // [account]
     query: {
-      enabled: !!strikeAsset && !!address,
+      enabled: !!strikeAsset && !!address, // Only query if addresses exist
     },
   });
 
   // Read issuer's approval amount for underlyingAsset (exercise requires issuer approval)
   const { data: issuerUnderlyingAllowance } = useReadContract({
-    address: underlyingAsset as Address | undefined,
-    abi: ERC20_ABI,
-    functionName: 'allowance',
-    args: (typeof issuer === 'string' && contractAddress) ? [issuer as Address, contractAddress] : undefined,
+    address: underlyingAsset as Address | undefined, // Underlying asset token address
+    abi: ERC20_ABI, // ERC20 ABI
+    functionName: 'allowance', // Check approval amount
+    args: (typeof issuer === 'string' && contractAddress) ? [issuer as Address, contractAddress] : undefined, // [issuer, option contract]
     query: {
-      enabled: !!underlyingAsset && typeof issuer === 'string' && !!contractAddress,
+      enabled: !!underlyingAsset && typeof issuer === 'string' && !!contractAddress, // Only query if addresses exist
     },
   });
 
   // Read current user's (if Issuer) approval amount for underlyingAsset
   const { data: currentUserUnderlyingAllowance } = useReadContract({
-    address: underlyingAsset as Address | undefined,
-    abi: ERC20_ABI,
-    functionName: 'allowance',
-    args: address && contractAddress ? [address, contractAddress] : undefined,
+    address: underlyingAsset as Address | undefined, // Underlying asset token address
+    abi: ERC20_ABI, // ERC20 ABI
+    functionName: 'allowance', // Check approval amount
+    args: address && contractAddress ? [address, contractAddress] : undefined, // [issuer, option contract]
     query: {
-      enabled: !!underlyingAsset && !!address && !!contractAddress && isIssuer,
+      enabled: !!underlyingAsset && !!address && !!contractAddress && isIssuer, // Only query if issuer
     } as any,
   });
 
   // Read current user's (if Issuer) underlyingAsset balance
   const { data: underlyingBalance } = useReadContract({
-    address: underlyingAsset as Address | undefined,
-    abi: ERC20_ABI,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
+    address: underlyingAsset as Address | undefined, // Underlying asset token address
+    abi: ERC20_ABI, // ERC20 ABI
+    functionName: 'balanceOf', // Query balance
+    args: address ? [address] : undefined, // [account]
     query: {
-      enabled: !!underlyingAsset && !!address && isIssuer,
+      enabled: !!underlyingAsset && !!address && isIssuer, // Only query if issuer
     } as any,
   });
 
-  const statusNames = ['Created', 'Active', 'Expired', 'Exercised'];
+  const statusNames = ['Created', 'Active', 'Expired', 'Exercised']; // Status text mapping
 
   // Automatically clear messages after transaction confirmation
-  useEffect(() => {
-    if (isConfirmed) {
-      const timer = setTimeout(() => {
-        setSuccess('');
-        setError('');
-      }, 5000);
-      return () => clearTimeout(timer);
+  useEffect(() => { // Execute when isConfirmed changes
+    if (isConfirmed) { // Check if transaction confirmed
+      const timer = setTimeout(() => { // Create 5 second timer
+        setSuccess(''); // Clear success message
+        setError(''); // Clear error message
+      }, 5000); // Wait 5 seconds
+      return () => clearTimeout(timer); // Cleanup: clear timer on unmount or dependency change
     }
-  }, [isConfirmed]);
+  }, [isConfirmed]); // Re-run when isConfirmed changes
 
   /**
    * Handle premium payment

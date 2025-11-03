@@ -1,170 +1,184 @@
+// Client-side component marker for Next.js
 'use client';
 
+// Import React hooks for component state and side effects
 import { useState, useEffect } from 'react';
+// Import Wagmi hooks for wallet and contract interactions
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+// Import Viem utilities for formatting ether values and address type
 import { formatEther, type Address } from 'viem';
+// Import Next.js Link component for client-side navigation
 import Link from 'next/link';
+// Import token display component
 import TokenDisplay from './TokenDisplay';
 
-// Factory contract ABI
+/**
+ * Factory contract ABI - Application Binary Interface for OptionFactory contract
+ * Defines functions available in the factory contract for creating and managing options
+ */
 const OPTION_FACTORY_ABI = [
   {
-    "inputs": [],
-    "name": "getAllOptions",
-    "outputs": [{"internalType": "address[]", "name": "addresses", "type": "address[]"}],
-    "stateMutability": "view",
-    "type": "function"
+    "inputs": [], // No parameters required
+    "name": "getAllOptions", // Function name to retrieve all option addresses
+    "outputs": [{"internalType": "address[]", "name": "addresses", "type": "address[]"}], // Returns array of option contract addresses
+    "stateMutability": "view", // Read-only function (doesn't modify state)
+    "type": "function" // This is a function definition
   },
   {
-    "inputs": [{"internalType": "address", "name": "_optionAddress", "type": "address"}],
-    "name": "matchOption",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "inputs": [{"internalType": "address", "name": "_optionAddress", "type": "address"}], // Takes option contract address as parameter
+    "name": "matchOption", // Function name to match an option (assign holder)
+    "outputs": [], // No return values
+    "stateMutability": "nonpayable", // Function modifies state but doesn't accept ETH
+    "type": "function" // This is a function definition
   }
 ] as const;
 
-// Option contract ABI (for reading option information)
+/**
+ * Option contract ABI - Application Binary Interface for EuropeanCallOption contract (read-only functions)
+ * Defines view functions to read option parameters and state from deployed option contracts
+ */
 const EUROPEAN_CALL_OPTION_ABI = [
   {
-    "inputs": [],
-    "name": "underlyingAsset",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "underlyingAsset", // Get underlying asset token address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns token address
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "strikeAsset",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "strikeAsset", // Get strike asset token address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns token address
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "strikePrice",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "strikePrice", // Get strike price parameter
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns strike price in wei
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "expirationTime",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "expirationTime", // Get expiration timestamp
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns Unix timestamp in seconds
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "contractSize",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "contractSize", // Get contract size parameter
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns contract size in wei
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "issuer",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "issuer", // Get issuer (seller) address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns issuer address
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "holder",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "holder", // Get holder (buyer) address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns holder address (zero if not matched)
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "status",
-    "outputs": [{"internalType": "enum EuropeanCallOption.OptionStatus", "name": "", "type": "uint8"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "status", // Get current option status
+    "outputs": [{"internalType": "enum EuropeanCallOption.OptionStatus", "name": "", "type": "uint8"}], // Returns enum value: 0=Created, 1=Active, 2=Expired, 3=Exercised
+    "stateMutability": "view", // Read-only function
     "type": "function"
   }
 ] as const;
 
+// Interface defining component props
 interface OptionListProps {
-  factoryAddress: Address;
-  onMatchSuccess?: () => void;
+  factoryAddress: Address; // Factory contract address
+  onMatchSuccess?: () => void; // Optional callback when matching succeeds
 }
 
+// Main option list component - displays all available options and allows matching
 export default function OptionList({ factoryAddress, onMatchSuccess }: OptionListProps) {
-  const { address, isConnected } = useAccount();
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+  const { address, isConnected } = useAccount(); // Get wallet connection state
+  const { writeContract, data: hash, isPending } = useWriteContract(); // Get contract write function and transaction state
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash }); // Wait for transaction confirmation
 
-  const [optionAddresses, setOptionAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [matchingOption, setMatchingOption] = useState<Address | null>(null);
-  const [error, setError] = useState<string>('');
+  const [optionAddresses, setOptionAddresses] = useState<Address[]>([]); // Store list of option contract addresses
+  const [loading, setLoading] = useState(true); // Track loading state
+  const [matchingOption, setMatchingOption] = useState<Address | null>(null); // Track currently matching option address
+  const [error, setError] = useState<string>(''); // Store error message
 
   // Read all option list (including matched ones)
   const { data: allOptions, refetch: refetchAll, isLoading: isLoadingOptions } = useReadContract({
-    address: factoryAddress,
-    abi: OPTION_FACTORY_ABI,
-    functionName: 'getAllOptions',
+    address: factoryAddress, // Factory contract address
+    abi: OPTION_FACTORY_ABI, // Factory contract ABI
+    functionName: 'getAllOptions', // Function to call
     query: {
-      enabled: !!factoryAddress,
+      enabled: !!factoryAddress, // Only query if factory address exists
     },
   });
 
   // Auto polling: refresh list every 10 seconds
-  useEffect(() => {
-    if (!factoryAddress) return;
+  useEffect(() => { // Execute when factoryAddress or refetchAll changes
+    if (!factoryAddress) return; // Exit if no factory address
 
-    const interval = setInterval(() => {
-      refetchAll();
-    }, 10000); // 10 seconds
+    const interval = setInterval(() => { // Create interval
+      refetchAll(); // Refresh option list
+    }, 10000); // Run every 10 seconds
 
-    return () => clearInterval(interval);
-  }, [factoryAddress, refetchAll]);
+    return () => clearInterval(interval); // Cleanup: clear interval on unmount or dependency change
+  }, [factoryAddress, refetchAll]); // Re-run when dependencies change
 
   // Update option address list
-  useEffect(() => {
-    if (allOptions && Array.isArray(allOptions)) {
-      setOptionAddresses(allOptions as Address[]);
-      setLoading(isLoadingOptions);
+  useEffect(() => { // Execute when allOptions or isLoadingOptions changes
+    if (allOptions && Array.isArray(allOptions)) { // Check if data exists and is array
+      setOptionAddresses(allOptions as Address[]); // Set option addresses
+      setLoading(isLoadingOptions); // Update loading state
     } else {
-      setOptionAddresses([]);
-      setLoading(isLoadingOptions);
+      setOptionAddresses([]); // Clear option addresses
+      setLoading(isLoadingOptions); // Update loading state
     }
-  }, [allOptions, isLoadingOptions]);
+  }, [allOptions, isLoadingOptions]); // Re-run when dependencies change
 
   // Handle match success
-  useEffect(() => {
-    if (isConfirmed && matchingOption) {
-      setMatchingOption(null);
-      if (onMatchSuccess) {
-        onMatchSuccess();
+  useEffect(() => { // Execute when isConfirmed, matchingOption, or callbacks change
+    if (isConfirmed && matchingOption) { // Check if transaction confirmed and we have matching option
+      setMatchingOption(null); // Clear matching option
+      if (onMatchSuccess) { // Check if callback exists
+        onMatchSuccess(); // Call success callback
       }
       // Reload list
-      refetchAll();
+      refetchAll(); // Refresh option list to show updated state
     }
-  }, [isConfirmed, matchingOption, onMatchSuccess, refetchAll]);
+  }, [isConfirmed, matchingOption, onMatchSuccess, refetchAll]); // Re-run when dependencies change
 
   // Handle matching
-  const handleMatch = async (optionAddress: Address) => {
-    if (!isConnected) {
-      setError('Please connect wallet first');
-      return;
+  const handleMatch = async (optionAddress: Address) => { // Async function to match an option
+    if (!isConnected) { // Check if wallet is connected
+      setError('Please connect wallet first'); // Set error message
+      return; // Exit early
     }
 
-    setError('');
-    setMatchingOption(optionAddress);
+    setError(''); // Clear any existing errors
+    setMatchingOption(optionAddress); // Set currently matching option
 
-    try {
-      await writeContract({
-        address: factoryAddress,
-        abi: OPTION_FACTORY_ABI,
-        functionName: 'matchOption',
-        args: [optionAddress],
+    try { // Try to match option
+      await writeContract({ // Call factory contract to match option
+        address: factoryAddress, // Factory contract address
+        abi: OPTION_FACTORY_ABI, // Factory contract ABI
+        functionName: 'matchOption', // Function to call
+        args: [optionAddress], // Pass option address as argument
       });
-    } catch (error: any) {
-      const errorMessage = error?.shortMessage || error?.message || 'Match failed';
-      setError(errorMessage);
-      setMatchingOption(null);
-      console.error('Match failed:', error);
+    } catch (error: any) { // Handle any errors
+      const errorMessage = error?.shortMessage || error?.message || 'Match failed'; // Extract error message
+      setError(errorMessage); // Set error message
+      setMatchingOption(null); // Clear matching option
+      console.error('Match failed:', error); // Log error to console
     }
   };
 
@@ -268,61 +282,61 @@ export default function OptionList({ factoryAddress, onMatchSuccess }: OptionLis
   );
 }
 
-// Single option card component
+// Single option card component - displays individual option details in a card
 interface OptionCardProps {
-  optionAddress: Address;
-  onMatch: (address: Address) => void;
-  isMatching: boolean;
-  isConnected: boolean;
+  optionAddress: Address; // Option contract address
+  onMatch: (address: Address) => void; // Callback when match button clicked
+  isMatching: boolean; // Whether this option is currently being matched
+  isConnected: boolean; // Whether wallet is connected
 }
 
 function OptionCard({ optionAddress, onMatch, isMatching, isConnected }: OptionCardProps) {
-  const { data: underlyingAsset } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'underlyingAsset',
+  const { data: underlyingAsset } = useReadContract({ // Read underlying asset token address
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'underlyingAsset', // Read underlying asset
   });
 
-  const { data: strikeAsset } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'strikeAsset',
+  const { data: strikeAsset } = useReadContract({ // Read strike asset token address
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'strikeAsset', // Read strike asset
   });
 
-  const { data: strikePrice } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'strikePrice',
+  const { data: strikePrice } = useReadContract({ // Read strike price
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'strikePrice', // Read strike price
   });
 
-  const { data: expirationTime } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'expirationTime',
+  const { data: expirationTime } = useReadContract({ // Read expiration timestamp
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'expirationTime', // Read expiration time
   });
 
-  const { data: contractSize } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'contractSize',
+  const { data: contractSize } = useReadContract({ // Read contract size
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'contractSize', // Read contract size
   });
 
-  const { data: issuer } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'issuer',
+  const { data: issuer } = useReadContract({ // Read issuer address
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'issuer', // Read issuer
   });
 
-  const { data: holder } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'holder',
+  const { data: holder } = useReadContract({ // Read holder address
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'holder', // Read holder
   });
 
-  const { data: status } = useReadContract({
-    address: optionAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'status',
+  const { data: status } = useReadContract({ // Read option status
+    address: optionAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'status', // Read status
   });
 
   const statusNames = ['Created', 'Active', 'Expired', 'Exercised'];

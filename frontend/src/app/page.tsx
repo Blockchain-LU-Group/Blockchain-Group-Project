@@ -1,70 +1,80 @@
+// Client-side component marker for Next.js
 'use client';
 
+// Import React hooks for component state and side effects
 import { useState, useEffect } from 'react';
+// Import Next.js navigation utilities for routing and URL params
 import { useSearchParams, useRouter } from 'next/navigation';
+// Import Next.js Link component for client-side navigation
 import Link from 'next/link';
+// Import wallet connection component
 import WalletConnect from '../components/WalletConnect';
+// Import option operations component (pay premium, exercise, etc.)
 import OptionOperations from '../components/OptionOperations';
+// Import option dashboard component (display option details)
 import OptionDashboard from '../components/OptionDashboard';
+// Import option list component (show all options from factory)
 import OptionList from '../components/OptionList';
+// Import Ethereum address type from Viem
 import { type Address } from 'viem';
 
+// Main home page component
 export default function Home() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [connectedAddress, setConnectedAddress] = useState<string | undefined>();
-  const [selectedOption, setSelectedOption] = useState<string>('');
-  const [factoryAddress, setFactoryAddress] = useState<string>('');
-  const [isLoadingFactory, setIsLoadingFactory] = useState(false);
+  const router = useRouter(); // Get router instance for navigation
+  const searchParams = useSearchParams(); // Get URL search parameters
+  const [connectedAddress, setConnectedAddress] = useState<string | undefined>(); // Store connected wallet address
+  const [selectedOption, setSelectedOption] = useState<string>(''); // Store currently selected option address
+  const [factoryAddress, setFactoryAddress] = useState<string>(''); // Store factory contract address
+  const [isLoadingFactory, setIsLoadingFactory] = useState(false); // Track factory loading state
 
   // Read selected option from URL parameters
-  useEffect(() => {
-    const optionParam = searchParams?.get('option');
-    setSelectedOption(optionParam || '');
-  }, [searchParams]);
+  useEffect(() => { // Execute when component mounts or searchParams changes
+    const optionParam = searchParams?.get('option'); // Get 'option' parameter from URL
+    setSelectedOption(optionParam || ''); // Set selected option or empty string
+  }, [searchParams]); // Re-run when searchParams changes
 
   // Update URL when returning to list
-  const handleBackToList = () => {
-    setSelectedOption('');
-    router.push('/');
+  const handleBackToList = () => { // Handler for back to list button
+    setSelectedOption(''); // Clear selected option
+    router.push('/'); // Navigate to home page
   };
 
-  // Load factory contract address
+  // Load factory contract address from deployment API or local storage
   const loadFactoryAddress = async () => {
-    setIsLoadingFactory(true);
+    setIsLoadingFactory(true); // Set loading state to true
     
     try {
-      const response = await fetch('/api/deployment');
-      const data = await response.json();
+      const response = await fetch('/api/deployment'); // Fetch deployment info from API
+      const data = await response.json(); // Parse JSON response
       
-      if (data.success && data.deployment?.contracts?.optionFactory?.address) {
-        setFactoryAddress(data.deployment.contracts.optionFactory.address);
+      if (data.success && data.deployment?.contracts?.optionFactory?.address) { // Check if factory address exists
+        setFactoryAddress(data.deployment.contracts.optionFactory.address); // Set factory address from API
       } else {
         // Try to read from local storage
-        const stored = localStorage.getItem('factoryAddress');
-        if (stored) {
-          setFactoryAddress(stored);
+        const stored = localStorage.getItem('factoryAddress'); // Get factory address from localStorage
+        if (stored) { // If found in storage
+          setFactoryAddress(stored); // Set factory address from storage
         }
       }
-    } catch (error: any) {
-      console.error('Failed to load factory address:', error);
-      const stored = localStorage.getItem('factoryAddress');
-      if (stored) {
-        setFactoryAddress(stored);
+    } catch (error: any) { // Handle any errors
+      console.error('Failed to load factory address:', error); // Log error to console
+      const stored = localStorage.getItem('factoryAddress'); // Try localStorage as fallback
+      if (stored) { // If found in storage
+        setFactoryAddress(stored); // Set factory address from storage
       }
     } finally {
-      setIsLoadingFactory(false);
+      setIsLoadingFactory(false); // Always set loading state to false
     }
   };
 
-  useEffect(() => {
-    loadFactoryAddress();
-  }, []);
+  useEffect(() => { // Execute when component mounts
+    loadFactoryAddress(); // Load factory address on mount
+  }, []); // Empty dependency array means run only once
 
   // Callback after successful matching
-  const handleMatchSuccess = () => {
+  const handleMatchSuccess = () => { // Handler for successful option matching
     // Can add success notification here
-    console.log('Option matched successfully');
+    console.log('Option matched successfully'); // Log success message
   };
 
   return (

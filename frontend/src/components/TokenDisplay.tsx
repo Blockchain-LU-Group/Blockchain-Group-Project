@@ -1,18 +1,22 @@
+// Client-side component marker for Next.js
 'use client';
 
+// Import React hooks for component state and side effects
 import { useState, useEffect } from 'react';
+// Import Ethereum address type from Viem
 import { type Address } from 'viem';
 
+// Interface defining component props for token display
 interface TokenDisplayProps {
-  address: Address | string | undefined;
-  symbol?: string;
-  name?: string;
-  size?: 'sm' | 'md' | 'lg';
-  showAddress?: boolean;
-  className?: string;
+  address: Address | string | undefined; // Token contract address
+  symbol?: string; // Optional token symbol (e.g., 'UA', 'SA')
+  name?: string; // Optional token name
+  size?: 'sm' | 'md' | 'lg'; // Display size variant
+  showAddress?: boolean; // Whether to display full address
+  className?: string; // Additional CSS classes
 }
 
-// Token configuration mapping
+// Token configuration mapping - pre-configured token display settings
 const TOKEN_CONFIG: Record<string, { symbol: string; name: string; color: string; bgColor: string; icon: string }> = {
   'UA': {
     symbol: 'UA',
@@ -30,70 +34,71 @@ const TOKEN_CONFIG: Record<string, { symbol: string; name: string; color: string
   }
 };
 
+// Main token display component
 export default function TokenDisplay({ 
-  address, 
-  symbol, 
-  name, 
-  size = 'md',
-  showAddress = false,
-  className = ''
+  address, // Token contract address
+  symbol, // Token symbol
+  name, // Token name
+  size = 'md', // Default size is medium
+  showAddress = false, // Default is hiding address
+  className = '' // Default no additional classes
 }: TokenDisplayProps) {
-  const [tokenInfo, setTokenInfo] = useState<{ symbol: string; name: string; color: string; bgColor: string; icon: string } | null>(null);
+  const [tokenInfo, setTokenInfo] = useState<{ symbol: string; name: string; color: string; bgColor: string; icon: string } | null>(null); // Store token display configuration
 
   // Get token information from deployment info
-  useEffect(() => {
-    const loadTokenInfo = async () => {
-      if (!address) {
-        setTokenInfo(null);
-        return;
+  useEffect(() => { // Execute when address, symbol, or name changes
+    const loadTokenInfo = async () => { // Async function to load token configuration
+      if (!address) { // Check if address exists
+        setTokenInfo(null); // Clear token info if no address
+        return; // Exit early
       }
 
       // If symbol is provided, use it directly
-      if (symbol) {
-        const config = TOKEN_CONFIG[symbol.toUpperCase()];
-        if (config) {
-          setTokenInfo(config);
-          return;
+      if (symbol) { // Check if symbol prop is provided
+        const config = TOKEN_CONFIG[symbol.toUpperCase()]; // Get config for symbol (uppercase)
+        if (config) { // If config found
+          setTokenInfo(config); // Set token info from config
+          return; // Exit early
         }
       }
 
       // Try to match address from deployment info
       try {
-        const response = await fetch('/api/deployment');
-        const data = await response.json();
+        const response = await fetch('/api/deployment'); // Fetch deployment info from API
+        const data = await response.json(); // Parse JSON response
         
-        if (data.success && data.deployment?.contracts) {
-          const contracts = data.deployment.contracts;
-          const addressStr = String(address).toLowerCase();
+        if (data.success && data.deployment?.contracts) { // Check if deployment data exists
+          const contracts = data.deployment.contracts; // Extract contracts
+          const addressStr = String(address).toLowerCase(); // Convert address to lowercase for comparison
           
           // Check if it's UA token
-          if (contracts.underlyingAsset?.address?.toLowerCase() === addressStr) {
-            setTokenInfo(TOKEN_CONFIG.UA);
-            return;
+          if (contracts.underlyingAsset?.address?.toLowerCase() === addressStr) { // Compare addresses
+            setTokenInfo(TOKEN_CONFIG.UA); // Set UA configuration
+            return; // Exit early
           }
           
           // Check if it's SA token
-          if (contracts.strikeAsset?.address?.toLowerCase() === addressStr) {
-            setTokenInfo(TOKEN_CONFIG.SA);
-            return;
+          if (contracts.strikeAsset?.address?.toLowerCase() === addressStr) { // Compare addresses
+            setTokenInfo(TOKEN_CONFIG.SA); // Set SA configuration
+            return; // Exit early
           }
         }
-      } catch (error) {
-        console.error('Failed to load token information:', error);
+      } catch (error) { // Handle any errors
+        console.error('Failed to load token information:', error); // Log error to console
       }
 
       // If cannot match, use default display
-      setTokenInfo({
-        symbol: symbol || 'TOKEN',
-        name: name || 'Token',
-        color: 'text-gray-400',
-        bgColor: 'bg-gray-500/20',
-        icon: '🔷'
+      setTokenInfo({ // Set fallback configuration
+        symbol: symbol || 'TOKEN', // Use provided symbol or default 'TOKEN'
+        name: name || 'Token', // Use provided name or default 'Token'
+        color: 'text-gray-400', // Gray text color
+        bgColor: 'bg-gray-500/20', // Gray background with 20% opacity
+        icon: '🔷' // Default blue diamond icon
       });
     };
 
-    loadTokenInfo();
-  }, [address, symbol, name]);
+    loadTokenInfo(); // Call async function
+  }, [address, symbol, name]); // Re-run when dependencies change
 
   if (!address || !tokenInfo) {
     const sizeClasses = size === 'sm' ? { icon: 'w-6 h-6', text: 'text-sm', iconText: 'text-xs' } :

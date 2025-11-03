@@ -62,9 +62,12 @@ Blockchain-Group-Project/
 │   └── sepolia_option.json       # Sepolia network deployment information
 │
 ├── docs/                         # Documentation directory
-│   ├── Euop_DeFi_projectDesign.md  # This document
+│   ├── demo_video_link.txt
+│   ├── Presentation.pptx
+│   ├── Project_Report.docx
 │   ├── HOW_TO_GET_ETHERSCAN_KEY.md
-│   └── HOW_TO_GET_INFURA_KEY.md
+│   ├── HOW_TO_GET_INFURA_KEY.md
+│   └── knowledge-base
 │
 ├── hardhat.config.ts             # Hardhat configuration
 ├── package.json                  # Project dependencies and scripts

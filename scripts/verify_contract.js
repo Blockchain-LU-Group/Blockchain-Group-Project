@@ -30,8 +30,11 @@
  * 5. After successful verification, contract shows as "Verified" on Etherscan
  */
 
+// Import Hardhat's ethers library and run task runner for contract verification
 const { ethers, run } = require("hardhat");
+// Import Node.js file system module for reading deployment files
 const fs = require("fs");
+// Import Node.js path module for handling file system paths
 const path = require("path");
 
 async function main() {
@@ -48,61 +51,61 @@ async function main() {
   }
 
   // Read and parse deployment information JSON file
-  const deploymentInfo = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
+  const deploymentInfo = JSON.parse(fs.readFileSync(deploymentPath, "utf8")); // Read file and parse JSON content
   console.log("📋 Reading information from deployment file:", deploymentPath);
-  console.log("Network:", deploymentInfo.network);
-  console.log("Deployment time:", deploymentInfo.timestamp);
+  console.log("Network:", deploymentInfo.network); // Log network name from deployment info
+  console.log("Deployment time:", deploymentInfo.timestamp); // Log deployment timestamp
   console.log("");
 
-  const optionContract = deploymentInfo.contracts?.europeanCallOption;
-  if (!optionContract) {
+  const optionContract = deploymentInfo.contracts?.europeanCallOption; // Extract option contract info using optional chaining
+  if (!optionContract) { // Check if option contract info exists
     console.error("❌ europeanCallOption contract information not found in deployment file");
-    process.exit(1);
+    process.exit(1); // Exit with error code if not found
   }
 
-  const optionAddress = optionContract.address;
-  const constructorArgs = optionContract.constructorArgs;
+  const optionAddress = optionContract.address; // Get contract address from deployment info
+  const constructorArgs = optionContract.constructorArgs; // Get constructor arguments from deployment info
 
-  if (!optionAddress) {
+  if (!optionAddress) { // Validate that address exists
     console.error("❌ Contract address not found in deployment file");
-    process.exit(1);
+    process.exit(1); // Exit with error if address missing
   }
 
-  if (!constructorArgs) {
+  if (!constructorArgs) { // Validate that constructor args exist
     console.error("❌ Constructor arguments not found in deployment file");
     console.log("Please manually execute verification command, or redeploy contract");
-    process.exit(1);
+    process.exit(1); // Exit with error if constructor args missing
   }
 
-  console.log("📋 Verification information:");
-  console.log("Contract address:", optionAddress);
-  console.log("Constructor arguments:");
-  console.log("  • Underlying Asset:", constructorArgs.underlyingAsset);
-  console.log("  • Strike Asset:", constructorArgs.strikeAsset);
-  console.log("  • Strike Price:", constructorArgs.strikePrice);
-  console.log("  • Expiration Time:", new Date(constructorArgs.expirationTime * 1000).toLocaleString('en-US'));
-  console.log("  • Contract Size:", constructorArgs.contractSize);
-  console.log("  • Holder:", constructorArgs.holder);
+  console.log("📋 Verification information:"); // Print verification info header
+  console.log("Contract address:", optionAddress); // Print contract address
+  console.log("Constructor arguments:"); // Print constructor args header
+  console.log("  • Underlying Asset:", constructorArgs.underlyingAsset); // Print underlying asset address
+  console.log("  • Strike Asset:", constructorArgs.strikeAsset); // Print strike asset address
+  console.log("  • Strike Price:", constructorArgs.strikePrice); // Print strike price
+  console.log("  • Expiration Time:", new Date(constructorArgs.expirationTime * 1000).toLocaleString('en-US')); // Convert timestamp to readable date
+  console.log("  • Contract Size:", constructorArgs.contractSize); // Print contract size
+  console.log("  • Holder:", constructorArgs.holder); // Print holder address
   console.log("");
 
   // Check API Key configuration
-  if (!process.env.ETHERSCAN_API_KEY) {
+  if (!process.env.ETHERSCAN_API_KEY) { // Check if API key is configured
     console.error("❌ Error: ETHERSCAN_API_KEY not configured in .env file");
     console.log("Please add ETHERSCAN_API_KEY to .env file first");
-    process.exit(1);
+    process.exit(1); // Exit with error if API key missing
   }
 
   // Retry verification (up to 3 times)
-  let retryCount = 0;
-  const maxRetries = 3;
-  let lastError = null;
+  let retryCount = 0; // Track number of retry attempts
+  const maxRetries = 3; // Maximum number of retry attempts
+  let lastError = null; // Store last error for debugging
 
-  while (retryCount < maxRetries) {
+  while (retryCount < maxRetries) { // Loop until max retries reached or success
     try {
-      if (retryCount > 0) {
+      if (retryCount > 0) { // Check if this is a retry attempt
         console.log(`\n🔄 Retrying verification (${retryCount}/${maxRetries - 1})...`);
         // Wait 5 seconds before retry
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds using Promise-based delay
       }
 
       console.log("1️⃣ Verifying EuropeanCallOption contract source code...");
@@ -110,9 +113,9 @@ async function main() {
       // Call Hardhat's verify:verify task to verify contract
       // This task submits contract source code and constructor arguments to Etherscan API
       await Promise.race([
-        run("verify:verify", {
-          address: optionAddress,
-          constructorArguments: [
+        run("verify:verify", { // Execute Hardhat verify task
+          address: optionAddress, // Contract address to verify
+          constructorArguments: [ // Pass constructor arguments for verification
             constructorArgs.underlyingAsset,
             constructorArgs.strikeAsset,
             constructorArgs.strikePrice,
@@ -121,14 +124,14 @@ async function main() {
             constructorArgs.holder
           ],
         }),
-        // Set 30 second timeout
+        // Set 30 second timeout to prevent hanging on slow networks
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Verification timeout after 30 seconds")), 30000)
+          setTimeout(() => reject(new Error("Verification timeout after 30 seconds")), 30000) // Reject after 30s
         )
-      ]);
+      ]); // Promise.race resolves/rejects with whichever completes first
       
       // Verification successful, output success message and break loop
-      if (retryCount > 0) {
+      if (retryCount > 0) { // Check if retries were needed
         console.log(`\n✅ EuropeanCallOption contract verification successful! (after ${retryCount} retries)`);
       } else {
         console.log("\n✅ EuropeanCallOption contract verification successful!");
@@ -137,42 +140,42 @@ async function main() {
       console.log("\n💡 Tip: Contract is verified, you can view the full source code on Etherscan");
 
       // If Mock tokens were deployed, also provide verification command hints
-      const underlyingAsset = deploymentInfo.contracts?.underlyingAsset;
-      const strikeAsset = deploymentInfo.contracts?.strikeAsset;
+      const underlyingAsset = deploymentInfo.contracts?.underlyingAsset; // Extract underlying asset info if exists
+      const strikeAsset = deploymentInfo.contracts?.strikeAsset; // Extract strike asset info if exists
       
-      if (underlyingAsset || strikeAsset) {
+      if (underlyingAsset || strikeAsset) { // Check if Mock tokens were deployed
         console.log("\n📝 Mock token verification commands (optional):");
-        if (underlyingAsset) {
+        if (underlyingAsset) { // If underlying asset exists
           console.log(`   npx hardhat verify --network sepolia ${underlyingAsset.address} "Underlying Asset" "UA" ${ethers.parseEther("1000000")}`);
         }
-        if (strikeAsset) {
+        if (strikeAsset) { // If strike asset exists
           console.log(`   npx hardhat verify --network sepolia ${strikeAsset.address} "Strike Asset" "SA" ${ethers.parseEther("1000000")}`);
         }
       }
       
       // Verification successful, break loop
-      break;
+      break; // Exit retry loop on success
 
-    } catch (error) {
+    } catch (error) { // Handle verification errors
       // Record error
-      lastError = error;
-      const errorMessage = error.message || String(error);
+      lastError = error; // Store error for debugging if all retries fail
+      const errorMessage = error.message || String(error); // Extract error message or convert to string
       
-      if (errorMessage.toLowerCase().includes("already verified")) {
+      if (errorMessage.toLowerCase().includes("already verified")) { // Check if contract already verified
         // If contract is already verified, give prompt (not an error)
         console.log("\n✅ Contract is already verified");
         console.log("Etherscan link:", `https://sepolia.etherscan.io/address/${optionAddress}#code`);
-        return; // Exit successfully
+        return; // Exit successfully since verification is already complete
       }
       
-      retryCount++;
+      retryCount++; // Increment retry counter
       
-      if (retryCount >= maxRetries) {
+      if (retryCount >= maxRetries) { // Check if max retries reached
         // Reached maximum retries, output detailed error information
         console.error("\n❌ Verification failed (after " + (maxRetries - 1) + " retries):", errorMessage);
         
-        // Analyze error type
-        if (errorMessage.toLowerCase().includes("timeout") || 
+        // Analyze error type to provide helpful diagnostics
+        if (errorMessage.toLowerCase().includes("timeout") || // Check for timeout-related errors
             errorMessage.toLowerCase().includes("connect timeout") ||
             errorMessage.toLowerCase().includes("connection") ||
             errorMessage.toLowerCase().includes("und_err_connect_timeout")) {
@@ -225,7 +228,7 @@ async function main() {
         console.log("   holder:", constructorArgs.holder);
         console.log("\n💻 Command line verification command (if network recovers):");
         console.log(`   npx hardhat verify --network sepolia ${optionAddress} ${constructorArgs.underlyingAsset} ${constructorArgs.strikeAsset} ${constructorArgs.strikePrice} ${constructorArgs.expirationTime} ${constructorArgs.contractSize} ${constructorArgs.holder}`);
-        process.exit(1);
+        process.exit(1); // Exit with error code after max retries failed
       } else {
         // Still have retry opportunities
         console.log(`⚠️  Verification failed: ${errorMessage}`);
@@ -236,10 +239,10 @@ async function main() {
 }
 
 // Execute verification: exit code 0 on success, exit code 1 on failure
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
+main() // Run main function
+  .then(() => process.exit(0)) // Exit with success code if verification completes
+  .catch((error) => { // Catch and handle any unhandled errors
+    console.error(error); // Log error to console
+    process.exit(1); // Exit with error code
   });
 

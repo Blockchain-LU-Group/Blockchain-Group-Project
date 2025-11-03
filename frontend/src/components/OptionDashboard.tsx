@@ -1,169 +1,178 @@
+// Client-side component marker for Next.js
 'use client';
 
+// Import Wagmi hook for reading contract data
 import { useReadContract } from 'wagmi';
+// Import Viem utilities for formatting ether values and address type
 import { formatEther, type Address } from 'viem';
+// Import token display component
 import TokenDisplay from './TokenDisplay';
 
+/**
+ * Option contract ABI - Application Binary Interface for EuropeanCallOption contract (read-only view functions)
+ * Defines all view functions to read option parameters, roles, status, and exercisability
+ */
 const EUROPEAN_CALL_OPTION_ABI = [
   {
-    "inputs": [],
-    "name": "contractSize",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "contractSize", // Get contract size parameter
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns contract size in wei
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "expirationTime",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "expirationTime", // Get expiration timestamp
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns Unix timestamp in seconds
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "holder",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "holder", // Get holder (buyer) address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns holder address (zero if not matched)
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "isExercisable",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "isExercisable", // Check if option is currently exercisable
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}], // Returns true if within exercise window
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "issuer",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "issuer", // Get issuer (seller) address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns issuer address
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "status",
-    "outputs": [{"internalType": "enum EuropeanCallOption.OptionStatus", "name": "", "type": "uint8"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "status", // Get current option lifecycle status
+    "outputs": [{"internalType": "enum EuropeanCallOption.OptionStatus", "name": "", "type": "uint8"}], // Returns status: 0=Created, 1=Active, 2=Expired, 3=Exercised
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "strikeAsset",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "strikeAsset", // Get strike asset token address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns strike asset token address
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "strikePrice",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "strikePrice", // Get strike price parameter
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], // Returns strike price in wei
+    "stateMutability": "view", // Read-only function
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "underlyingAsset",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "inputs": [], // No parameters
+    "name": "underlyingAsset", // Get underlying asset token address
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}], // Returns underlying asset token address
+    "stateMutability": "view", // Read-only function
     "type": "function"
   }
 ] as const;
 
+// Main option dashboard component - displays option details read from contract
 export default function OptionDashboard({ contractAddress }: { contractAddress?: Address }) {
   // Check if address format is valid
-  const isValidAddress = contractAddress && contractAddress.length === 42 && contractAddress.startsWith('0x');
-  const isEnabled = !!isValidAddress;
+  const isValidAddress = contractAddress && contractAddress.length === 42 && contractAddress.startsWith('0x'); // Validate Ethereum address format
+  const isEnabled = !!isValidAddress; // Enable queries only if address is valid
 
   const { data: underlyingAsset, error: underlyingError, isLoading: isLoadingUnderlying } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'underlyingAsset',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'underlyingAsset', // Read underlying asset address
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: strikeAsset, error: strikeAssetError, isLoading: isLoadingStrikeAsset } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'strikeAsset',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'strikeAsset', // Read strike asset address
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: strikePrice, error: strikePriceError, isLoading: isLoadingStrikePrice } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'strikePrice',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'strikePrice', // Read strike price
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: expirationTime, error: expirationTimeError, isLoading: isLoadingExpirationTime } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'expirationTime',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'expirationTime', // Read expiration timestamp
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: contractSize, error: contractSizeError, isLoading: isLoadingContractSize } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'contractSize',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'contractSize', // Read contract size
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: issuer, error: issuerError, isLoading: isLoadingIssuer } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'issuer',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'issuer', // Read issuer (seller) address
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: holder, error: holderError, isLoading: isLoadingHolder } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'holder',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'holder', // Read holder (buyer) address
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: status, error: statusError, isLoading: isLoadingStatus } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'status',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'status', // Read option status
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   const { data: isExercisable, error: isExercisableError, isLoading: isLoadingIsExercisable } = useReadContract({
-    address: contractAddress,
-    abi: EUROPEAN_CALL_OPTION_ABI,
-    functionName: 'isExercisable',
+    address: contractAddress, // Option contract address
+    abi: EUROPEAN_CALL_OPTION_ABI, // Contract ABI
+    functionName: 'isExercisable', // Check if exercisable
     query: {
-      enabled: isEnabled,
+      enabled: isEnabled, // Only query if address is valid
     },
   });
 
   // Check if any queries are loading
   const isLoading = isLoadingUnderlying || isLoadingStrikeAsset || isLoadingStrikePrice || 
                    isLoadingExpirationTime || isLoadingContractSize || isLoadingIssuer || 
-                   isLoadingHolder || isLoadingStatus || isLoadingIsExercisable;
+                   isLoadingHolder || isLoadingStatus || isLoadingIsExercisable; // True if any query is loading
 
   // Check if there are any errors
   const hasError = underlyingError || strikeAssetError || strikePriceError || expirationTimeError || 
-                  contractSizeError || issuerError || holderError || statusError || isExercisableError;
+                  contractSizeError || issuerError || holderError || statusError || isExercisableError; // True if any query has error
 
   const statusNames = ['Created', 'Active', 'Expired', 'Exercised'];
 

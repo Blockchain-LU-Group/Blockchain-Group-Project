@@ -1,99 +1,99 @@
 /**
- * RootLayout - Next.js 应用的根布局组件
+ * RootLayout - Root layout component for Next.js application
  * 
- * 这是整个应用的最外层组件，定义了全局的 HTML 结构和配置。
- * 所有页面都会被这个布局包裹，因此这里的配置会应用到整个应用。
+ * This is the outermost component of the entire application, defining global HTML structure and configuration.
+ * All pages will be wrapped by this layout, so configurations here apply to the entire application.
  * 
- * 调用链:
- * 1. Next.js 启动时通过约定路由自动发现此文件（文件名必须是 layout.tsx）
- * 2. 用户访问任何页面时，Next.js 会先渲染 RootLayout
- * 3. 然后将对应的 page.tsx 作为 children 注入
- * 4. 最终输出: <RootLayout><Page /></RootLayout>
+ * Call chain:
+ * 1. Next.js automatically discovers this file through convention-based routing at startup (filename must be layout.tsx)
+ * 2. When user visits any page, Next.js renders RootLayout first
+ * 3. Then injects the corresponding page.tsx as children
+ * 4. Final output: <RootLayout><Page /></RootLayout>
  */
 
 // ============================================================================
-// 导入依赖（显式调用 - 代码中可见）
+// Import dependencies (explicit calls - visible in code)
 // ============================================================================
 
-// Next.js 类型定义：用于配置页面元数据（SEO、标题等） node_modules/next/dist/lib/metadata/types/metadata-interface.d.ts
+// Next.js type definition: for configuring page metadata (SEO, title, etc.) node_modules/next/dist/lib/metadata/types/metadata-interface.d.ts
 import type { Metadata } from 'next'
 
-// Google 字体加载器：从 Google Fonts 动态加载 Inter 字体
-// 自动优化字体加载，减少页面闪烁（FOUT）
+// Google font loader: dynamically load Inter font from Google Fonts
+// Automatically optimizes font loading, reduces page flickering (FOUT)
 import { Inter } from 'next/font/google'
 
-// 全局样式表：包含 Tailwind CSS 指令和自定义样式
-// 触发调用链: globals.css -> PostCSS (🔵 隐式：Next.js 自动) -> Tailwind CSS (🔵 隐式：Tailwind 自动查找)
+// Global stylesheet: contains Tailwind CSS directives and custom styles
+// Trigger call chain: globals.css -> PostCSS (🔵 implicit: Next.js automatic) -> Tailwind CSS (🔵 implicit: Tailwind auto-discovery)
 import './globals.css'
 
-// Web3 上下文提供者：提供钱包连接、区块链交互等功能
-// 包裹所有子组件，使它们可以访问 Web3 功能（useAccount, useConnect 等 hooks）
+// Web3 context provider: provides wallet connection, blockchain interaction, etc.
+// Wraps all child components, enabling them to access Web3 functionality (useAccount, useConnect, etc. hooks)
 import { Providers } from './providers'
 
 // ============================================================================
-// 字体配置
+// Font configuration
 // ============================================================================
 
 /**
- * 配置 Inter 字体
- * - subsets: ['latin'] - 只加载拉丁字符集，减小字体文件大小
- * - Next.js 会自动优化字体加载：
- *   1. 在构建时下载字体文件
- *   2. 自托管字体（不依赖 Google CDN）
- *   3. 零布局偏移（CSS font-display: swap）
+ * Configure Inter font
+ * - subsets: ['latin'] - only load Latin character set, reducing font file size
+ * - Next.js automatically optimizes font loading:
+ *   1. Download font files at build time
+ *   2. Self-host fonts (independent from Google CDN)
+ *   3. Zero layout shift (CSS font-display: swap)
  */
 const inter = Inter({ subsets: ['latin'] })
 
 // ============================================================================
-// 页面元数据（用于 SEO 和浏览器显示）
+// Page metadata (for SEO and browser display)
 // ============================================================================
 
 /**
- * 元数据配置
- * - title: 显示在浏览器标签页，搜索引擎结果中
- * - description: 显示在搜索引擎结果的描述部分
+ * Metadata configuration
+ * - title: displayed in browser tab and search engine results
+ * - description: displayed in search engine result descriptions
  * 
- * Next.js 会自动将这些信息注入到 HTML <head> 中：
+ * Next.js automatically injects these into HTML <head>:
  * <head>
  *   <title>EuropeanCallOption DeFi</title>
- *   <meta name="description" content="欧式看涨期权交易平台 - 为学生设计" />
+ *   <meta name="description" content="European Call Option Trading Platform - Designed for Students" />
  * </head>
  */
 export const metadata: Metadata = {
   title: 'EuropeanCallOption DeFi',
-  description: '欧式看涨期权交易平台 - 为学生设计',
+  description: 'European Call Option Trading Platform - Designed for Students',
 }
 
 // ============================================================================
-// 根布局组件
+// Root layout component
 // ============================================================================
 
 /**
- * RootLayout 组件
+ * RootLayout component
  * 
- * @param children - 子页面内容（由 Next.js 自动注入）
- *                   例如：访问 / 时，children 是 page.tsx 的内容
- *                        访问 /about 时，children 是 about/page.tsx 的内容
+ * @param children - Page content (automatically injected by Next.js)
+ *                   Example: when visiting /, children is page.tsx content
+ *                            when visiting /about, children is about/page.tsx content
  * 
- * 组件结构说明:
- * <html lang="zh-CN">               ← 设置页面语言为简体中文（影响搜索引擎和屏幕阅读器）
- *   <body className={...}>          ← 应用 Inter 字体到整个页面
- *     <Providers>                   ← Web3 上下文提供者（提供钱包连接等功能）
- *       {children}                  ← 页面内容（page.tsx）会被插入这里
+ * Component structure:
+ * <html lang="en">               ← Set page language to English (affects search engines and screen readers)
+ *   <body className={...}>       ← Apply Inter font to entire page
+ *     <Providers>                ← Web3 context provider (provides wallet connection, etc.)
+ *       {children}               ← Page content (page.tsx) will be inserted here
  *     </Providers>
  *   </body>
  * </html>
  * 
- * 为什么需要 Providers 包裹？
- * - WagmiProvider: 管理 Web3 连接状态（钱包地址、网络等）
- * - QueryClientProvider: 缓存区块链数据，优化性能
- * - 所有子组件都可以通过 React hooks 访问这些功能
+ * Why wrap with Providers?
+ * - WagmiProvider: manages Web3 connection state (wallet address, network, etc.)
+ * - QueryClientProvider: caches blockchain data, optimizes performance
+ * - All child components can access these features through React hooks
  * 
- * 渲染流程:
- * 1. Next.js 匹配路由，找到对应的 page.tsx
- * 2. 先渲染 RootLayout（外壳）
- * 3. 将 page.tsx 作为 children 传入
- * 4. 最终生成完整的 HTML 发送给浏览器
+ * Rendering flow:
+ * 1. Next.js matches route and finds corresponding page.tsx
+ * 2. Renders RootLayout first (shell)
+ * 3. Passes page.tsx as children
+ * 4. Generates complete HTML sent to browser
  */
 export default function RootLayout({
   children,
@@ -101,11 +101,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <body className={inter.className}>
         {/* 
-          Providers 包裹所有内容，提供全局的 Web3 上下文
-          这样所有子组件都可以使用 useAccount(), useConnect() 等 hooks
+          Providers wraps all content, providing global Web3 context
+          This allows all child components to use useAccount(), useConnect(), etc. hooks
         */}
         <Providers>{children}</Providers>
       </body>

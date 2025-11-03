@@ -1,265 +1,282 @@
+// Client-side component marker for Next.js
 'use client';
 
+// Import React hooks for component state and side effects
 import { useState, useEffect } from 'react';
+// Import Wagmi hooks for wallet and contract interactions
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+// Import Viem utilities for parsing ether values and address type
 import { parseEther, type Address } from 'viem';
+// Import Next.js router for navigation
 import { useRouter } from 'next/navigation';
+// Import Next.js Link component for client-side navigation
 import Link from 'next/link';
+// Import token display component to show token information
 import TokenDisplay from '../../components/TokenDisplay';
 
-// Factory contract ABI
+/**
+ * Factory contract ABI - Application Binary Interface for smart contract interaction
+ * 
+ * ABI is the interface between Ethereum smart contracts and the external world.
+ * It describes how to encode/decode function calls and events for contract interaction.
+ * 
+ * This ABI defines two important parts of the OptionFactory contract:
+ * 1. createOption function - to create new option contracts
+ * 2. OptionCreated event - emitted when an option is created
+ */
 const OPTION_FACTORY_ABI = [
   {
-    "inputs": [
-      {"internalType": "address", "name": "_underlyingAsset", "type": "address"},
-      {"internalType": "address", "name": "_strikeAsset", "type": "address"},
-      {"internalType": "uint256", "name": "_strikePrice", "type": "uint256"},
-      {"internalType": "uint256", "name": "_expirationTime", "type": "uint256"},
-      {"internalType": "uint256", "name": "_contractSize", "type": "uint256"}
+    "inputs": [ // Function input parameters (constructor arguments for new option)
+      {"internalType": "address", "name": "_underlyingAsset", "type": "address"}, // Address of underlying asset token (UA)
+      {"internalType": "address", "name": "_strikeAsset", "type": "address"}, // Address of strike asset token (SA)
+      {"internalType": "uint256", "name": "_strikePrice", "type": "uint256"}, // Strike price in wei (e.g., 100 SA per UA)
+      {"internalType": "uint256", "name": "_expirationTime", "type": "uint256"}, // Expiration Unix timestamp (in seconds)
+      {"internalType": "uint256", "name": "_contractSize", "type": "uint256"} // Contract size in wei (quantity of underlying asset)
     ],
-    "name": "createOption",
-    "outputs": [
-      {"internalType": "uint256", "name": "optionId", "type": "uint256"},
-      {"internalType": "address", "name": "optionAddress", "type": "address"}
+    "name": "createOption", // Function name to create a new European call option
+    "outputs": [ // Function return values
+      {"internalType": "uint256", "name": "optionId", "type": "uint256"}, // Unique ID of the created option
+      {"internalType": "address", "name": "optionAddress", "type": "address"} // Address of the deployed option contract
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "nonpayable", // Function doesn't accept ETH value (no payable)
+    "type": "function" // This is a function definition
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true, "internalType": "uint256", "name": "optionId", "type": "uint256"},
-      {"indexed": true, "internalType": "address", "name": "optionAddress", "type": "address"},
-      {"indexed": true, "internalType": "address", "name": "issuer", "type": "address"},
-      {"indexed": false, "internalType": "address", "name": "underlyingAsset", "type": "address"},
-      {"indexed": false, "internalType": "address", "name": "strikeAsset", "type": "address"},
-      {"indexed": false, "internalType": "uint256", "name": "strikePrice", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "expirationTime", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "contractSize", "type": "uint256"}
+    "anonymous": false, // Event is not anonymous (has topic signature)
+    "inputs": [ // Event parameters (emitted when option is created)
+      {"indexed": true, "internalType": "uint256", "name": "optionId", "type": "uint256"}, // Option ID (indexed for filtering)
+      {"indexed": true, "internalType": "address", "name": "optionAddress", "type": "address"}, // Option contract address (indexed)
+      {"indexed": true, "internalType": "address", "name": "issuer", "type": "address"}, // Issuer address (indexed)
+      {"indexed": false, "internalType": "address", "name": "underlyingAsset", "type": "address"}, // UA token address
+      {"indexed": false, "internalType": "address", "name": "strikeAsset", "type": "address"}, // SA token address
+      {"indexed": false, "internalType": "uint256", "name": "strikePrice", "type": "uint256"}, // Strike price parameter
+      {"indexed": false, "internalType": "uint256", "name": "expirationTime", "type": "uint256"}, // Expiration timestamp
+      {"indexed": false, "internalType": "uint256", "name": "contractSize", "type": "uint256"} // Contract size parameter
     ],
-    "name": "OptionCreated",
-    "type": "event"
+    "name": "OptionCreated", // Event name emitted when option is created
+    "type": "event" // This is an event definition
   }
-] as const;
+] as const; // 'as const' makes array readonly and preserves literal types for TypeScript
 
+// Main create option page component
 export default function CreateOptionPage() {
-  const router = useRouter();
-  const { address, isConnected } = useAccount();
-  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+  const router = useRouter(); // Get router instance for navigation
+  const { address, isConnected } = useAccount(); // Get wallet address and connection status
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract(); // Get contract write function and transaction state
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash }); // Wait for transaction confirmation
 
-  const [factoryAddress, setFactoryAddress] = useState<string>('');
-  const [underlyingAssetType, setUnderlyingAssetType] = useState<string>('UA'); // UA or SA
-  const [strikeAssetType, setStrikeAssetType] = useState<string>('SA'); // UA or SA
-  const [underlyingAsset, setUnderlyingAsset] = useState<string>('');
-  const [strikeAsset, setStrikeAsset] = useState<string>('');
-  const [strikePrice, setStrikePrice] = useState<string>('');
-  const [expirationDate, setExpirationDate] = useState<string>('');
-  const [expirationTime, setExpirationTime] = useState<string>('');
-  const [contractSize, setContractSize] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
-  const [tokenAddresses, setTokenAddresses] = useState<{
-    UA?: string;
-    SA?: string;
+  const [factoryAddress, setFactoryAddress] = useState<string>(''); // Store factory contract address
+  const [underlyingAssetType, setUnderlyingAssetType] = useState<string>('UA'); // Underlying asset type: UA or SA
+  const [strikeAssetType, setStrikeAssetType] = useState<string>('SA'); // Strike asset type: UA or SA
+  const [underlyingAsset, setUnderlyingAsset] = useState<string>(''); // Store underlying asset token address
+  const [strikeAsset, setStrikeAsset] = useState<string>(''); // Store strike asset token address
+  const [strikePrice, setStrikePrice] = useState<string>(''); // Store strike price input
+  const [expirationDate, setExpirationDate] = useState<string>(''); // Store expiration date input
+  const [expirationTime, setExpirationTime] = useState<string>(''); // Store expiration time input
+  const [contractSize, setContractSize] = useState<string>(''); // Store contract size input
+  const [error, setError] = useState<string>(''); // Store error message
+  const [success, setSuccess] = useState<string>(''); // Store success message
+  const [tokenAddresses, setTokenAddresses] = useState<{ // Store token addresses from deployment
+    UA?: string; // Underlying asset token address
+    SA?: string; // Strike asset token address
   }>({});
 
   // Load factory contract address and token addresses from deployment info
-  useEffect(() => {
-    const loadDeploymentInfo = async () => {
+  useEffect(() => { // Execute when component mounts
+    const loadDeploymentInfo = async () => { // Async function to load deployment data
       try {
-        const response = await fetch('/api/deployment');
-        const data = await response.json();
+        const response = await fetch('/api/deployment'); // Fetch deployment info from API
+        const data = await response.json(); // Parse JSON response
         
-        if (data.success && data.deployment) {
+        if (data.success && data.deployment) { // Check if deployment data exists
           // Load factory contract address
-          if (data.deployment.contracts?.optionFactory?.address) {
-            setFactoryAddress(data.deployment.contracts.optionFactory.address);
+          if (data.deployment.contracts?.optionFactory?.address) { // Check if factory address exists
+            setFactoryAddress(data.deployment.contracts.optionFactory.address); // Set factory address from API
           } else {
-            const storedFactory = localStorage.getItem('factoryAddress');
-            if (storedFactory) {
-              setFactoryAddress(storedFactory);
+            const storedFactory = localStorage.getItem('factoryAddress'); // Try localStorage
+            if (storedFactory) { // If found in storage
+              setFactoryAddress(storedFactory); // Set factory address from storage
             } else {
-              setError('Factory contract address not found. Please deploy factory contract first.');
+              setError('Factory contract address not found. Please deploy factory contract first.'); // Set error message
             }
           }
 
           // Load token addresses
-          const addresses: { UA?: string; SA?: string } = {};
-          if (data.deployment.contracts?.underlyingAsset?.address) {
-            addresses.UA = data.deployment.contracts.underlyingAsset.address;
+          const addresses: { UA?: string; SA?: string } = {}; // Initialize empty addresses object
+          if (data.deployment.contracts?.underlyingAsset?.address) { // Check if UA exists
+            addresses.UA = data.deployment.contracts.underlyingAsset.address; // Set UA address
           }
-          if (data.deployment.contracts?.strikeAsset?.address) {
-            addresses.SA = data.deployment.contracts.strikeAsset.address;
+          if (data.deployment.contracts?.strikeAsset?.address) { // Check if SA exists
+            addresses.SA = data.deployment.contracts.strikeAsset.address; // Set SA address
           }
-          setTokenAddresses(addresses);
+          setTokenAddresses(addresses); // Store token addresses
 
           // If addresses are loaded, automatically set default values
-          if (addresses.UA) {
-            setUnderlyingAsset(addresses.UA);
+          if (addresses.UA) { // If UA address exists
+            setUnderlyingAsset(addresses.UA); // Set as default underlying asset
           }
-          if (addresses.SA) {
-            setStrikeAsset(addresses.SA);
+          if (addresses.SA) { // If SA address exists
+            setStrikeAsset(addresses.SA); // Set as default strike asset
           }
         } else {
           // Try to read from local storage
-          const storedFactory = localStorage.getItem('factoryAddress');
-          if (storedFactory) {
-            setFactoryAddress(storedFactory);
+          const storedFactory = localStorage.getItem('factoryAddress'); // Get from localStorage
+          if (storedFactory) { // If found
+            setFactoryAddress(storedFactory); // Set factory address
           }
         }
-      } catch (error: any) {
-        console.error('Failed to load deployment information:', error);
-        const storedFactory = localStorage.getItem('factoryAddress');
-        if (storedFactory) {
-          setFactoryAddress(storedFactory);
+      } catch (error: any) { // Handle any errors
+        console.error('Failed to load deployment information:', error); // Log error
+        const storedFactory = localStorage.getItem('factoryAddress'); // Try localStorage as fallback
+        if (storedFactory) { // If found
+          setFactoryAddress(storedFactory); // Set factory address from storage
         }
       }
     };
     
-    loadDeploymentInfo();
-  }, []);
+    loadDeploymentInfo(); // Call async function
+  }, []); // Empty dependency array means run only once
 
   // When token type changes, update corresponding address
-  useEffect(() => {
-    if (underlyingAssetType === 'UA' && tokenAddresses.UA) {
-      setUnderlyingAsset(tokenAddresses.UA);
-    } else if (underlyingAssetType === 'SA' && tokenAddresses.SA) {
-      setUnderlyingAsset(tokenAddresses.SA);
+  useEffect(() => { // Execute when underlyingAssetType or tokenAddresses changes
+    if (underlyingAssetType === 'UA' && tokenAddresses.UA) { // If UA selected and UA exists
+      setUnderlyingAsset(tokenAddresses.UA); // Set UA address
+    } else if (underlyingAssetType === 'SA' && tokenAddresses.SA) { // If SA selected and SA exists
+      setUnderlyingAsset(tokenAddresses.SA); // Set SA address
     }
-  }, [underlyingAssetType, tokenAddresses]);
+  }, [underlyingAssetType, tokenAddresses]); // Re-run when dependencies change
 
-  useEffect(() => {
-    if (strikeAssetType === 'UA' && tokenAddresses.UA) {
-      setStrikeAsset(tokenAddresses.UA);
-    } else if (strikeAssetType === 'SA' && tokenAddresses.SA) {
-      setStrikeAsset(tokenAddresses.SA);
+  useEffect(() => { // Execute when strikeAssetType or tokenAddresses changes
+    if (strikeAssetType === 'UA' && tokenAddresses.UA) { // If UA selected and UA exists
+      setStrikeAsset(tokenAddresses.UA); // Set UA address
+    } else if (strikeAssetType === 'SA' && tokenAddresses.SA) { // If SA selected and SA exists
+      setStrikeAsset(tokenAddresses.SA); // Set SA address
     }
-  }, [strikeAssetType, tokenAddresses]);
+  }, [strikeAssetType, tokenAddresses]); // Re-run when dependencies change
 
   // Redirect after transaction confirmation
-  useEffect(() => {
-    if (isConfirmed) {
-      setSuccess('Option created successfully! Redirecting...');
-      setTimeout(() => {
-        router.push('/');
+  useEffect(() => { // Execute when isConfirmed changes
+    if (isConfirmed) { // If transaction is confirmed
+      setSuccess('Option created successfully! Redirecting...'); // Show success message
+      setTimeout(() => { // Wait 2 seconds
+        router.push('/'); // Navigate to home page
       }, 2000);
     }
-  }, [isConfirmed, router]);
+  }, [isConfirmed, router]); // Re-run when dependencies change
 
   // Calculate expiration timestamp
-  const calculateExpirationTimestamp = (): number => {
-    if (!expirationDate || !expirationTime) return 0;
+  const calculateExpirationTimestamp = (): number => { // Convert date and time to Unix timestamp
+    if (!expirationDate || !expirationTime) return 0; // Return 0 if not set
     
-    const dateStr = `${expirationDate}T${expirationTime}`;
-    const date = new Date(dateStr);
-    return Math.floor(date.getTime() / 1000);
+    const dateStr = `${expirationDate}T${expirationTime}`; // Combine date and time
+    const date = new Date(dateStr); // Create Date object
+    return Math.floor(date.getTime() / 1000); // Convert to Unix timestamp (seconds)
   };
 
   // Validate form
-  const validateForm = (): boolean => {
-    if (!isConnected) {
-      setError('Please connect wallet first');
-      return false;
+  const validateForm = (): boolean => { // Validate all form inputs
+    if (!isConnected) { // Check if wallet is connected
+      setError('Please connect wallet first'); // Set error message
+      return false; // Return validation failure
     }
 
-    if (!factoryAddress) {
-      setError('Factory contract address not found');
-      return false;
+    if (!factoryAddress) { // Check if factory address exists
+      setError('Factory contract address not found'); // Set error message
+      return false; // Return validation failure
     }
 
-    if (!underlyingAsset) {
-      setError('Please select underlying asset token');
-      return false;
+    if (!underlyingAsset) { // Check if underlying asset selected
+      setError('Please select underlying asset token'); // Set error message
+      return false; // Return validation failure
     }
 
-    if (!strikeAsset) {
-      setError('Please select strike asset token');
-      return false;
+    if (!strikeAsset) { // Check if strike asset selected
+      setError('Please select strike asset token'); // Set error message
+      return false; // Return validation failure
     }
 
-    if (underlyingAsset === strikeAsset) {
-      setError('Underlying asset and strike asset cannot be the same');
-      return false;
+    if (underlyingAsset === strikeAsset) { // Check if assets are different
+      setError('Underlying asset and strike asset cannot be the same'); // Set error message
+      return false; // Return validation failure
     }
 
-    if (!strikePrice || parseFloat(strikePrice) <= 0) {
-      setError('Strike price must be greater than 0');
-      return false;
+    if (!strikePrice || parseFloat(strikePrice) <= 0) { // Check if strike price is valid
+      setError('Strike price must be greater than 0'); // Set error message
+      return false; // Return validation failure
     }
 
-    if (!contractSize || parseFloat(contractSize) <= 0) {
-      setError('Contract size must be greater than 0');
-      return false;
+    if (!contractSize || parseFloat(contractSize) <= 0) { // Check if contract size is valid
+      setError('Contract size must be greater than 0'); // Set error message
+      return false; // Return validation failure
     }
 
-    const expTimestamp = calculateExpirationTimestamp();
-    if (expTimestamp <= Math.floor(Date.now() / 1000)) {
-      setError('Expiration time must be in the future');
-      return false;
+    const expTimestamp = calculateExpirationTimestamp(); // Calculate expiration timestamp
+    if (expTimestamp <= Math.floor(Date.now() / 1000)) { // Check if expiration is in future
+      setError('Expiration time must be in the future'); // Set error message
+      return false; // Return validation failure
     }
 
-    return true;
+    return true; // All validations passed
   };
 
   // Handle option creation
-  const handleCreateOption = async () => {
-    setError('');
-    setSuccess('');
+  const handleCreateOption = async () => { // Async function to create option
+    setError(''); // Clear any existing errors
+    setSuccess(''); // Clear any existing success messages
 
-    if (!validateForm()) {
-      return;
+    if (!validateForm()) { // Validate form inputs
+      return; // Exit if validation fails
     }
 
-    try {
-      const expTimestamp = calculateExpirationTimestamp();
-      const strikePriceWei = parseEther(strikePrice);
-      const contractSizeWei = parseEther(contractSize);
+    try { // Try to create option
+      const expTimestamp = calculateExpirationTimestamp(); // Calculate expiration timestamp from date/time
+      const strikePriceWei = parseEther(strikePrice); // Convert strike price to wei
+      const contractSizeWei = parseEther(contractSize); // Convert contract size to wei
 
-      setSuccess('Creating option...');
+      setSuccess('Creating option...'); // Show creating message
 
-      await writeContract({
-        address: factoryAddress as Address,
-        abi: OPTION_FACTORY_ABI,
-        functionName: 'createOption',
-        args: [
-          underlyingAsset as Address,
-          strikeAsset as Address,
-          strikePriceWei,
-          BigInt(expTimestamp),
-          contractSizeWei
+      await writeContract({ // Call factory contract to create option
+        address: factoryAddress as Address, // Factory contract address
+        abi: OPTION_FACTORY_ABI, // Contract ABI
+        functionName: 'createOption', // Function to call
+        args: [ // Constructor arguments
+          underlyingAsset as Address, // Underlying asset token address
+          strikeAsset as Address, // Strike asset token address
+          strikePriceWei, // Strike price in wei
+          BigInt(expTimestamp), // Expiration timestamp as BigInt
+          contractSizeWei // Contract size in wei
         ],
       });
 
-      setSuccess('Transaction submitted, waiting for confirmation...');
-    } catch (error: any) {
-      const errorMessage = error?.shortMessage || error?.message || 'Failed to create option';
-      setError(errorMessage);
-      console.error('Failed to create option:', error);
+      setSuccess('Transaction submitted, waiting for confirmation...'); // Show waiting message
+    } catch (error: any) { // Handle any errors
+      const errorMessage = error?.shortMessage || error?.message || 'Failed to create option'; // Extract error message
+      setError(errorMessage); // Set error message
+      console.error('Failed to create option:', error); // Log error to console
     }
   };
 
   // Get minimum date (today)
-  const getMinDate = (): string => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+  const getMinDate = (): string => { // Get today's date in YYYY-MM-DD format
+    const today = new Date(); // Get current date
+    return today.toISOString().split('T')[0]; // Return date part only
   };
 
   // Get default time (current time + 1 hour)
-  const getDefaultDateTime = () => {
-    const now = new Date();
-    now.setHours(now.getHours() + 1);
+  const getDefaultDateTime = () => { // Get default date/time (1 hour from now)
+    const now = new Date(); // Get current date/time
+    now.setHours(now.getHours() + 1); // Add 1 hour
     return {
-      date: now.toISOString().split('T')[0],
-      time: now.toTimeString().slice(0, 5)
+      date: now.toISOString().split('T')[0], // Return date in YYYY-MM-DD format
+      time: now.toTimeString().slice(0, 5) // Return time in HH:MM format
     };
   };
 
-  useEffect(() => {
-    const { date, time } = getDefaultDateTime();
-    if (!expirationDate) setExpirationDate(date);
-    if (!expirationTime) setExpirationTime(time);
-  }, []);
+  useEffect(() => { // Execute when component mounts
+    const { date, time } = getDefaultDateTime(); // Get default date/time
+    if (!expirationDate) setExpirationDate(date); // Set expiration date if not set
+    if (!expirationTime) setExpirationTime(time); // Set expiration time if not set
+  }, []); // Empty dependency array means run only once
 
   if (!isConnected) {
     return (
