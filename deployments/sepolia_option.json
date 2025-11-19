@@ -1,6 +1,6 @@
 {
   "network": "sepolia",
-  "timestamp": "2025-11-02T10:53:17.229Z",
+  "timestamp": "2025-11-18T10:17:04.680Z",
   "deployer": "0x15Db97935D18C391F9B4106D4511F699Be3C794D",
   "contracts": {
     "optionFactory": {
@@ -17,12 +17,12 @@
       "symbol": "SA"
     },
     "europeanCallOption": {
-      "address": "0x20d2518424057D8DacBD9536D9D83B067990954e",
+      "address": "0xF495Daa99e37fA6af97F47E324F90336aEc42B76",
       "constructorArgs": {
         "underlyingAsset": "0x452f0232e083998d2f968b0602fb8208e7320df8",
         "strikeAsset": "0x424bd9e49e2049600deda9604d2a3ba836f99ee4",
         "strikePrice": "100000000000000000000",
-        "expirationTime": 1764672787,
+        "expirationTime": 1766053016,
         "contractSize": "1000000000000000000",
         "holder": "0x15Db97935D18C391F9B4106D4511F699Be3C794D",
         "issuer": "0x15Db97935D18C391F9B4106D4511F699Be3C794D",

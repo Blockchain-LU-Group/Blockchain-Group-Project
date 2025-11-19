@@ -62,16 +62,12 @@ Blockchain-Group-Project/
 │   └── sepolia_option.json       # Sepolia network deployment information
 │
 ├── docs/                         # Documentation directory
-│   ├── demo_video_link.txt
-│   ├── Presentation.pptx
-│   ├── Project_Report.docx
-│   ├── HOW_TO_GET_ETHERSCAN_KEY.md
-│   ├── HOW_TO_GET_INFURA_KEY.md
-│   └── knowledge-base
+│   └── European_Call_Option_DeFi_Report.docx
 │
 ├── hardhat.config.ts             # Hardhat configuration
 ├── package.json                  # Project dependencies and scripts
 ├── start.sh                      # Startup script (testing, compilation, deployment, etc.)
+├── slither.config.json           # slither scan configuration
 └── README.md                     # Project documentation
 ```
 

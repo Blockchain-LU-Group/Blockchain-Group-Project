@@ -45,3 +45,7 @@ next-env.d.ts
 *.swo
 *~
 
+# docs
+docs/assessment/
+docs/knowledge-base/
+docs/projectMaterials/

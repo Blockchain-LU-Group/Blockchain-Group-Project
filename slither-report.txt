@@ -1,0 +1,150 @@
+INFO:Slither:slither.config.json has an unknown key: _comments : ['Slither workflow overview:', '1) Parse Solidity source code and build intermediate representation (IR/CFG)', '2) Run built-in/plugin detectors to scan for known risk patterns', '3) Generate reports based on severity levels and filters (printers)', 'This configuration file is used to control scan scope, filter paths/rules, output types, etc.', 'Note: JSON does not support native comments, here we use _comments and *_comment fields for documentation, Slither will ignore unknown keys']
+INFO:Slither:slither.config.json has an unknown key: filter_paths__comment : Files/directories to ignore (skip if path contains), used to avoid scanning compilation artifacts, dependencies, and scripts.
+INFO:Slither:slither.config.json has an unknown key: exclude_dependencies__comment : When true, do not scan contracts within dependencies (e.g., node_modules).
+INFO:Slither:slither.config.json has an unknown key: exclude_optimization__comment : When true, can ignore findings related only to compilation optimization (generally keep false).
+INFO:Slither:slither.config.json has an unknown key: exclude_informational__comment : Whether to ignore informational level (info only) findings.
+INFO:Slither:slither.config.json has an unknown key: exclude_low__comment : Whether to ignore low severity findings.
+INFO:Slither:slither.config.json has an unknown key: exclude_medium__comment : Whether to ignore medium severity findings.
+INFO:Slither:slither.config.json has an unknown key: exclude_high__comment : Whether to ignore high severity findings (not recommended).
+INFO:Slither:slither.config.json has an unknown key: detectors_to_exclude__comment : List of explicitly disabled detectors: filter noise or irrelevant rules based on project context.
+INFO:Slither:slither.config.json has an unknown key: printers__comment : List of output printers: human-summary for human-readable summary; txt for plain text report. Can add json, etc. as needed.
+INFO:Slither:slither.config.json has an unknown key: printers : ['human-summary', 'txt']
+'npx hardhat clean' running (wd: /Users/Shared/Files From c.localized/workspace/HK/LU/Blockchain-Group-Project-v1/Blockchain-Group-Project)
+'npx hardhat clean --global' running (wd: /Users/Shared/Files From c.localized/workspace/HK/LU/Blockchain-Group-Project-v1/Blockchain-Group-Project)
+'npx hardhat compile --force' running (wd: /Users/Shared/Files From c.localized/workspace/HK/LU/Blockchain-Group-Project-v1/Blockchain-Group-Project)
+INFO:Detectors:
+EuropeanCallOption.payPremium(uint256) (contracts/EuropeanCallOption.sol#86-98) uses arbitrary from in transferFrom: success = IERC20(strikeAsset).transferFrom(holder,issuer,premium) (contracts/EuropeanCallOption.sol#92)
+EuropeanCallOption.exercised() (contracts/EuropeanCallOption.sol#103-123) uses arbitrary from in transferFrom: strikeTransfer = IERC20(strikeAsset).transferFrom(holder,issuer,strikeAmount) (contracts/EuropeanCallOption.sol#113)
+EuropeanCallOption.exercised() (contracts/EuropeanCallOption.sol#103-123) uses arbitrary from in transferFrom: underlyingTransfer = IERC20(underlyingAsset).transferFrom(issuer,holder,contractSize) (contracts/EuropeanCallOption.sol#117)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#arbitrary-from-in-transferfrom
+INFO:Detectors:
+OptionFactory.getMatchableOptions() (contracts/OptionFactory.sol#152-182) uses a dangerous strict equality:
+	- status == EuropeanCallOption.OptionStatus.Created (contracts/OptionFactory.sol#158)
+OptionFactory.getMatchableOptions() (contracts/OptionFactory.sol#152-182) uses a dangerous strict equality:
+	- status_scope_1 == EuropeanCallOption.OptionStatus.Created (contracts/OptionFactory.sol#173)
+OptionFactory.getOptionInfo(address) (contracts/OptionFactory.sol#197-209) uses a dangerous strict equality:
+	- require(bool,string)((idx > 0 && idx < options.length) || (idx == 0 && options.length > 0 && options[0].optionAddress == _optionAddress),Option does not exist) (contracts/OptionFactory.sol#202-206)
+OptionFactory.matchOption(address) (contracts/OptionFactory.sol#109-135) uses a dangerous strict equality:
+	- require(bool,string)((idx > 0 && idx < options.length) || (idx == 0 && options.length > 0 && options[0].optionAddress == _optionAddress),Option does not exist) (contracts/OptionFactory.sol#114-118)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+INFO:Detectors:
+Reentrancy in EuropeanCallOption.exercised() (contracts/EuropeanCallOption.sol#103-123):
+	External calls:
+	- strikeTransfer = IERC20(strikeAsset).transferFrom(holder,issuer,strikeAmount) (contracts/EuropeanCallOption.sol#113)
+	- underlyingTransfer = IERC20(underlyingAsset).transferFrom(issuer,holder,contractSize) (contracts/EuropeanCallOption.sol#117)
+	State variables written after the call(s):
+	- status = OptionStatus.Exercised (contracts/EuropeanCallOption.sol#120)
+	EuropeanCallOption.status (contracts/EuropeanCallOption.sol#28) can be used in cross function reentrancies:
+	- EuropeanCallOption.constructor(address,address,uint256,uint256,uint256,address,address,address) (contracts/EuropeanCallOption.sol#50-80)
+	- EuropeanCallOption.expireOption() (contracts/EuropeanCallOption.sol#153-162)
+	- EuropeanCallOption.isExercisable() (contracts/EuropeanCallOption.sol#142-146)
+	- EuropeanCallOption.setHolder(address) (contracts/EuropeanCallOption.sol#129-136)
+	- EuropeanCallOption.status (contracts/EuropeanCallOption.sol#28)
+Reentrancy in OptionFactory.matchOption(address) (contracts/OptionFactory.sol#109-135):
+	External calls:
+	- optionContract.setHolder(msg.sender) (contracts/OptionFactory.sol#130)
+	State variables written after the call(s):
+	- option.holder = msg.sender (contracts/OptionFactory.sol#131)
+	OptionFactory.options (contracts/OptionFactory.sol#22) can be used in cross function reentrancies:
+	- OptionFactory.createOption(address,address,uint256,uint256,uint256) (contracts/OptionFactory.sol#58-103)
+	- OptionFactory.getAllOptions() (contracts/OptionFactory.sol#141-146)
+	- OptionFactory.getMatchableOptions() (contracts/OptionFactory.sol#152-182)
+	- OptionFactory.getOptionCount() (contracts/OptionFactory.sol#188-190)
+	- OptionFactory.getOptionInfo(address) (contracts/OptionFactory.sol#197-209)
+	- OptionFactory.matchOption(address) (contracts/OptionFactory.sol#109-135)
+	- OptionFactory.options (contracts/OptionFactory.sol#22)
+Reentrancy in EuropeanCallOption.payPremium(uint256) (contracts/EuropeanCallOption.sol#86-98):
+	External calls:
+	- success = IERC20(strikeAsset).transferFrom(holder,issuer,premium) (contracts/EuropeanCallOption.sol#92)
+	State variables written after the call(s):
+	- status = OptionStatus.Active (contracts/EuropeanCallOption.sol#95)
+	EuropeanCallOption.status (contracts/EuropeanCallOption.sol#28) can be used in cross function reentrancies:
+	- EuropeanCallOption.constructor(address,address,uint256,uint256,uint256,address,address,address) (contracts/EuropeanCallOption.sol#50-80)
+	- EuropeanCallOption.expireOption() (contracts/EuropeanCallOption.sol#153-162)
+	- EuropeanCallOption.isExercisable() (contracts/EuropeanCallOption.sol#142-146)
+	- EuropeanCallOption.setHolder(address) (contracts/EuropeanCallOption.sol#129-136)
+	- EuropeanCallOption.status (contracts/EuropeanCallOption.sol#28)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+INFO:Detectors:
+EuropeanCallOption.constructor(address,address,uint256,uint256,uint256,address,address,address)._holder (contracts/EuropeanCallOption.sol#56) lacks a zero-check on :
+		- holder = _holder (contracts/EuropeanCallOption.sol#73)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+INFO:Detectors:
+OptionFactory.getMatchableOptions() (contracts/OptionFactory.sol#152-182) has external calls inside a loop: status = EuropeanCallOption(options[i].optionAddress).status() (contracts/OptionFactory.sol#157-163)
+OptionFactory.getMatchableOptions() (contracts/OptionFactory.sol#152-182) has external calls inside a loop: status_scope_1 = EuropeanCallOption(options[i_scope_0].optionAddress).status() (contracts/OptionFactory.sol#172-179)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation/#calls-inside-a-loop
+INFO:Detectors:
+Reentrancy in OptionFactory.matchOption(address) (contracts/OptionFactory.sol#109-135):
+	External calls:
+	- optionContract.setHolder(msg.sender) (contracts/OptionFactory.sol#130)
+	Event emitted after the call(s):
+	- OptionMatched(idx,_optionAddress,msg.sender) (contracts/OptionFactory.sol#134)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+INFO:Detectors:
+EuropeanCallOption.constructor(address,address,uint256,uint256,uint256,address,address,address) (contracts/EuropeanCallOption.sol#50-80) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(_expirationTime > block.timestamp,Expiration time must be in the future) (contracts/EuropeanCallOption.sol#63)
+EuropeanCallOption.exercised() (contracts/EuropeanCallOption.sol#103-123) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(block.timestamp >= expirationTime,Not yet exercisable) (contracts/EuropeanCallOption.sol#106)
+	- require(bool,string)(block.timestamp <= expirationTime + 864000,Exercise window expired) (contracts/EuropeanCallOption.sol#107)
+EuropeanCallOption.isExercisable() (contracts/EuropeanCallOption.sol#142-146) uses timestamp for comparisons
+	Dangerous comparisons:
+	- status == OptionStatus.Active && block.timestamp >= expirationTime && block.timestamp <= expirationTime + 864000 (contracts/EuropeanCallOption.sol#143-145)
+OptionFactory.matchOption(address) (contracts/OptionFactory.sol#109-135) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)((idx > 0 && idx < options.length) || (idx == 0 && options.length > 0 && options[0].optionAddress == _optionAddress),Option does not exist) (contracts/OptionFactory.sol#114-118)
+	- require(bool,string)(option.exists,Option does not exist) (contracts/OptionFactory.sol#122)
+	- require(bool,string)(option.holder == address(0),Option already matched) (contracts/OptionFactory.sol#123)
+OptionFactory.getAllOptions() (contracts/OptionFactory.sol#141-146) uses timestamp for comparisons
+	Dangerous comparisons:
+	- i < options.length (contracts/OptionFactory.sol#143)
+OptionFactory.getMatchableOptions() (contracts/OptionFactory.sol#152-182) uses timestamp for comparisons
+	Dangerous comparisons:
+	- i < options.length (contracts/OptionFactory.sol#155)
+	- options[i].exists && options[i].holder == address(0) (contracts/OptionFactory.sol#156)
+	- status == EuropeanCallOption.OptionStatus.Created (contracts/OptionFactory.sol#158)
+	- i_scope_0 < options.length (contracts/OptionFactory.sol#170)
+	- options[i_scope_0].exists && options[i_scope_0].holder == address(0) (contracts/OptionFactory.sol#171)
+	- status_scope_1 == EuropeanCallOption.OptionStatus.Created (contracts/OptionFactory.sol#173)
+OptionFactory.getOptionInfo(address) (contracts/OptionFactory.sol#197-209) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)((idx > 0 && idx < options.length) || (idx == 0 && options.length > 0 && options[0].optionAddress == _optionAddress),Option does not exist) (contracts/OptionFactory.sol#202-206)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+INFO:Detectors:
+Version constraint ^0.8.19 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- VerbatimInvalidDeduplication
+	- FullInlinerNonExpressionSplitArgumentEvaluationOrder
+	- MissingSideEffectsOnSelectorAccess.
+It is used by:
+	- ^0.8.19 (contracts/EuropeanCallOption.sol#2)
+	- ^0.8.19 (contracts/OptionFactory.sol#2)
+	- ^0.8.19 (contracts/mocks/MockERC20.sol#2)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+INFO:Detectors:
+Parameter EuropeanCallOption.setHolder(address)._holder (contracts/EuropeanCallOption.sol#129) is not in mixedCase
+Parameter OptionFactory.createOption(address,address,uint256,uint256,uint256)._underlyingAsset (contracts/OptionFactory.sol#59) is not in mixedCase
+Parameter OptionFactory.createOption(address,address,uint256,uint256,uint256)._strikeAsset (contracts/OptionFactory.sol#60) is not in mixedCase
+Parameter OptionFactory.createOption(address,address,uint256,uint256,uint256)._strikePrice (contracts/OptionFactory.sol#61) is not in mixedCase
+Parameter OptionFactory.createOption(address,address,uint256,uint256,uint256)._expirationTime (contracts/OptionFactory.sol#62) is not in mixedCase
+Parameter OptionFactory.createOption(address,address,uint256,uint256,uint256)._contractSize (contracts/OptionFactory.sol#63) is not in mixedCase
+Parameter OptionFactory.matchOption(address)._optionAddress (contracts/OptionFactory.sol#109) is not in mixedCase
+Parameter OptionFactory.getOptionInfo(address)._optionAddress (contracts/OptionFactory.sol#197) is not in mixedCase
+Parameter OptionFactory.getUserCreatedOptions(address)._user (contracts/OptionFactory.sol#216) is not in mixedCase
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#conformance-to-solidity-naming-conventions
+INFO:Detectors:
+Loop condition i < options.length (contracts/OptionFactory.sol#143) should use cached array length instead of referencing `length` member of the storage array.
+ Loop condition i < options.length (contracts/OptionFactory.sol#155) should use cached array length instead of referencing `length` member of the storage array.
+ Loop condition i_scope_0 < options.length (contracts/OptionFactory.sol#170) should use cached array length instead of referencing `length` member of the storage array.
+ Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cache-array-length
+INFO:Detectors:
+EuropeanCallOption.contractSize (contracts/EuropeanCallOption.sol#21) should be immutable 
+EuropeanCallOption.expirationTime (contracts/EuropeanCallOption.sol#20) should be immutable 
+EuropeanCallOption.factory (contracts/EuropeanCallOption.sol#26) should be immutable 
+EuropeanCallOption.issuer (contracts/EuropeanCallOption.sol#24) should be immutable 
+EuropeanCallOption.strikeAsset (contracts/EuropeanCallOption.sol#18) should be immutable 
+EuropeanCallOption.strikePrice (contracts/EuropeanCallOption.sol#19) should be immutable 
+EuropeanCallOption.underlyingAsset (contracts/EuropeanCallOption.sol#17) should be immutable 
+MockERC20._decimals (contracts/mocks/MockERC20.sol#13) should be immutable 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-immutable
+INFO:Slither:. analyzed (8 contracts with 95 detectors), 42 result(s) found

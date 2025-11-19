@@ -104,8 +104,8 @@ async function main() {
     try {
       if (retryCount > 0) { // Check if this is a retry attempt
         console.log(`\n🔄 Retrying verification (${retryCount}/${maxRetries - 1})...`);
-        // Wait 5 seconds before retry
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds using Promise-based delay
+        // Wait 30 seconds before retry
+        await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 10 seconds using Promise-based delay
       }
 
       console.log("1️⃣ Verifying EuropeanCallOption contract source code...");
@@ -124,9 +124,9 @@ async function main() {
             constructorArgs.holder
           ],
         }),
-        // Set 30 second timeout to prevent hanging on slow networks
+        // Set 90 second timeout to prevent hanging on slow networks
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Verification timeout after 30 seconds")), 30000) // Reject after 30s
+          setTimeout(() => reject(new Error("Verification timeout after 90 seconds")), 90000) // Reject after 90s
         )
       ]); // Promise.race resolves/rejects with whichever completes first
       
